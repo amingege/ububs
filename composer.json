@@ -1,0 +1,19 @@
+{
+    "name": "linlm/ububs",
+    "description": "this is a framework for swoole",
+    "authors": [
+        {
+            "name": "linlm",
+            "email": "linlm1994@gmail.com"
+        }
+    ],
+    "require": {
+    	"php": ">=7.1.0",
+        "nikic/fast-route": "^1.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ububs\\": "src"
+        }
+    }
+}
