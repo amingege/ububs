@@ -76,7 +76,7 @@ class SwooleHttpServer
      * 注册时间
      * @return void
      */
-    public function registerEvents()
+    public function addEventListener()
     {
         self::$server->on('Start', array($this, 'doStart'));
         self::$server->on('WorkerStart', array($this, 'doWorkerStart'));
