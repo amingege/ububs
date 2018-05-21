@@ -6,6 +6,10 @@ class ServerManager
 
     private static $instance;
     private static $serverInstance;
+    private static $isStart = false;
+    const SWOOLE_SERVER           = 'SWOOLE_SERVER';
+    const SWOOLE_HTTP_SERVER      = 'SWOOLE_HTTP_SERVER';
+    const SWOOLE_WEBSOCKET_SERVER = 'SWOOLE_WEBSOCKET_SERVER';
 
     public static function getInstance(): Server
     {
@@ -17,18 +21,32 @@ class ServerManager
 
     public function start(): void
     {
-        $this->init();
+        $this->serverInit();
         $this->addEventListener();
         $this->getServer()->start();
     }
 
-    private function init(): void
+    public function stop()
+    {
+        if (!self::$isStart) {
+            return true;
+        }
+        
+    }
+
+    public function restart()
+    {
+        $this->stop();
+        $this->start();
+    }
+
+    private function serverInit(): void
     {
         if (isset(self::$serverInstance)) {
             return self::$serverInstance;
         }
-        self::$serverType = Config::get('app.server_type', 'swoole_http_server');
-        switch (self::$serverType) {
+        self::$serverType = Config::get('app.server_type', 'SWOOLE_HTTP_SERVER');
+        switch (strtoupper(self::$serverType)) {
             case self::SWOOLE_SERVER:
                 self::$serverInstance = \Ububs\Core\Swoole\Server\SwooleServer::getInstance();
                 break;
@@ -45,6 +63,7 @@ class ServerManager
                 # code...
                 break;
         }
+        self::$isStart = true;
         self::$serverInstance->init();
     }
 
