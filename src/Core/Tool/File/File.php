@@ -1,7 +1,9 @@
 <?php
-namespace Ububs\Core\Tool;
+namespace Ububs\Core\Tool\File;
 
-class File
+use Ububs\Core\Tool\Factory;
+
+class File extends Factory
 {
     public function isExist($filePath)
     {

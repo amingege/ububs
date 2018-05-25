@@ -47,16 +47,12 @@ class ServerManager
         }
         self::$serverType = Config::get('app.server_type', 'SWOOLE_HTTP_SERVER');
         switch (strtoupper(self::$serverType)) {
-            case self::SWOOLE_SERVER:
-                self::$serverInstance = \Ububs\Core\Swoole\Server\SwooleServer::getInstance();
-                break;
-
             case self::SWOOLE_HTTP_SERVER:
-                self::$serverInstance = \Ububs\Core\Swoole\Server\SwooleHttpServer::getInstance();
+                self::$serverInstance = \Ububs\Core\Swoole\Server\Http::getInstance();
                 break;
 
             case self::SWOOLE_WEBSOCKET_SERVER:
-                self::$serverInstance = \Ububs\Core\Swoole\Server\SwooleWebsocketServer::getInstance();
+                self::$serverInstance = \Ububs\Core\Swoole\Server\Websocket::getInstance();
                 break;
 
             default:

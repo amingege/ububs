@@ -1,7 +1,8 @@
 <?php
-namespace Ububs\Core\Tool;
+namespace Ububs\Core\Tool\Config;
+use Ububs\Core\Tool\Factory;
 
-class Config
+class Config extends Factory
 {
 
     public static $config;

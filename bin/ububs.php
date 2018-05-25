@@ -22,7 +22,12 @@
  * php ububs db:seed --目录名
  */
 
-require_once __DIR__ . '/vendor/autoload.php';
+foreach ([__DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php'] as $file) {
+    if (file_exists($file)) {
+        require $file;
+        break;
+    }
+}
 
 use Ububs\Component\Command\Adapter\Database;
 use Ububs\Component\Command\Adapter\Server;
@@ -47,7 +52,7 @@ class UbubsCommand
     const DB_REFRESH   = 'refresh';
 
     private static $codeMessage = [
-        'ERROR_INPUT'            => '不存在此命令',
+        'ERROR_INPUT'            => '请输入正确的命令',
         'INIT_FRAMEWORK_SUCCESS' => '框架初始化成功',
         'SERVER_START_SUCCESS'   => '服务器开启成功',
     ];
@@ -56,10 +61,10 @@ class UbubsCommand
     {
         // 全局变量初始化
         define('DS', DIRECTORY_SEPARATOR);
-        define('UBUBS_ROOT', realpath(getcwd()));// 时间设置
-        \date_default_timezone_set(Config::get('timezone', 'Asia/Shanghai'));
+        define('UBUBS_ROOT', realpath(getcwd()));
         // 配置文件初始化
         Config::load(UBUBS_ROOT . '/config');
+        \date_default_timezone_set(Config::get('timezone', 'Asia/Shanghai'));
     }
 
     /**
@@ -68,24 +73,11 @@ class UbubsCommand
      */
     public function run()
     {
-        // 解析命令
-        $responseHtml = $this->parseCommand();
-        echo $responseHtml . "\r\n";
-        return true;
-    }
-
-    /**
-     * 解析命令
-     * @return string 返回显示内容
-     */
-    private function parseCommand()
-    {
         global $argv;
         if (!isset($argv[1])) {
-            return self::$codeMessage['ERROR_INPUT'];
+            exit(self::$codeMessage['ERROR_INPUT']);
         }
         $result = '';
-        // install 等简单命令
         try {
             if (strpos($argv[1], ':') === false) {
                 $result = $this->parseSimpleCommand();

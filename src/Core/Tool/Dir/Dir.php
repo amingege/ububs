@@ -1,7 +1,8 @@
 <?php
-namespace Ububs\Core\Tool;
+namespace Ububs\Core\Tool\Dir;
+use Ububs\Core\Tool\Factory;
 
-class Dir
+class Dir extends Factory
 {
     /**
      * 递归获取目录下的文件
