@@ -1,5 +1,5 @@
 <?php
-namespace FwSwoole\Core;
+namespace Ububs\Core\Http\Request;
 
 class Request
 {

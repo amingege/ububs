@@ -1,12 +1,11 @@
 <?php
 namespace Ububs\Core\Swoole\Server\Adapter;
 
-use Ububs\Core\Request;
-use Ububs\Core\Response;
-use Ububs\Core\Tool\Config;
-use Ububs\DB\DB;
-use Ububs\Route\Route;
+use Ububs\Core\Http\Request\Request;
+use Ububs\Core\Http\Response\Response;
+use Ububs\Core\Http\Route\Route;
 use Ububs\Core\Swoole\Factory;
+use Ububs\Core\Tool\Config;
 
 class Http extends Factory
 {
@@ -33,7 +32,7 @@ class Http extends Factory
                 'debug_mode'               => $config['debug_mode'],
                 'task_worker_num'          => $config['task_worker_num'],
                 'heartbeat_check_interval' => $config['heartbeat_check_interval'],
-                'heartbeat_idle_time'      => $config['heartbeat_idle_time']
+                'heartbeat_idle_time'      => $config['heartbeat_idle_time'],
             )
         );
         $this->setClient(config('server.swoole_callback_client'));
@@ -81,7 +80,7 @@ class Http extends Factory
 
         }
         if ($worker_id == 0) {
-            
+
         }
 
         if (self::$client !== null && method_exists(self::$client, 'onWorkerStart')) {
@@ -108,8 +107,7 @@ class Http extends Factory
         $httpMethod = $request->server['request_method'];
         $pathInfo   = rawurldecode($request->server['path_info']);
         // 匹配路由
-        $route     = Route::getInstance();
-        $routeInfo = $route->getDispatcher()->dispatch($httpMethod, $pathInfo);
+        $routeInfo = Route::getInstance()->getDispatcher()->dispatch($httpMethod, $pathInfo);
         $result    = '';
         // 解析路由
         switch ($routeInfo[0]) {
@@ -129,15 +127,13 @@ class Http extends Factory
             case \FastRoute\Dispatcher::FOUND:
                 Request::init($request);
                 Response::init($response);
-                // $actionArr = $route->parseRouteInfo($routeInfo);
                 \ob_start();
-                $result = $route->run($routeInfo);
+                $result = Route::getInstance()->run($routeInfo);
                 if (is_array($result)) {
                     $result = json_encode($result);
                 }
                 $result = \ob_get_contents() . $result;
                 \ob_end_clean();
-
                 break;
         }
 

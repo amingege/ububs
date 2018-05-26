@@ -1,9 +1,8 @@
 <?php
-namespace FwSwoole\Core;
+namespace Ububs\Core\Http\Response;
 
 use FwSwoole\Core\Code;
-use FwSwoole\Core\Factory;
-use FwSwoole\Core\Request;
+use Ububs\Core\Http\Factory;
 
 class Response extends Factory
 {
@@ -14,7 +13,7 @@ class Response extends Factory
 
     public static function init(\swoole_http_response $response)
     {
-        self::$isEnd = false;
+        self::$isEnd    = false;
         self::$response = $response;
     }
     public static function getResponse()

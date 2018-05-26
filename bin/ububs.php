@@ -46,6 +46,7 @@ use Ububs\Core\Swoole\Event\EventManager;
 use Ububs\Core\Swoole\Server\ServerManager;
 use Ububs\Core\Tool\Config\Config;
 use Ububs\Core\Ububs;
+use Ububs\Core\Http\Route\Route;
 
 class UbubsCommand
 {
@@ -128,6 +129,11 @@ class UbubsCommand
     {
         dir_make(APP_ROOT . 'config');
         dir_make(APP_ROOT . 'app/Http/Controllers');
+        dir_make(APP_ROOT . 'routes');
+        $routePath = APP_ROOT . 'routes/web.php';
+        if (!is_file($routePath)) {
+            file_put_contents($routePath, $this->routerWebContent());
+        }
     }
 
     private function commandAssemble($type, $action)
@@ -152,6 +158,8 @@ class UbubsCommand
     private function serverStart()
     {
         ServerManager::getInstance()->initServer();
+        // 路由初始化
+        Route::getInstance()->init();
         EventManager::getInstance()->addEventListener();
         ServerManager::getInstance()->getServer()->start();
     }
@@ -164,6 +172,16 @@ class UbubsCommand
     private function serverReload($params)
     {
         ServerManager::getInstance()->reload();
+    }
+
+    private function routerWebContent()
+    {
+        return <<<'EOF'
+<?php
+$this->addRoutes('GET', '/frontend', function() {
+    echo 'success';
+});
+EOF;
     }
 }
 

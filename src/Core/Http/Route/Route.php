@@ -1,13 +1,12 @@
 <?php
-namespace FwSwoole\Route;
+namespace Ububs\Core\Http\Route;
 
 use App\Http\Middleware\Kernel;
+use FwSwoole\Core\Code;
 use FwSwoole\Core\Container;
-use FwSwoole\Core\Factory;
 use FwSwoole\Core\Request;
 use FwSwoole\Core\Response;
-use FwSwoole\Core\Code;
-use FwSwoole\Core\Tool\Dir;
+use Ububs\Core\Http\Factory;
 
 class Route extends Factory
 {
@@ -18,12 +17,12 @@ class Route extends Factory
 
     public function init()
     {
-        Dir::make(FWSWOOLE_ROOT . DS . 'storage' . DS . 'cache' . DS . 'route');
+        dir_make(APP_ROOT . 'storage/cache/route');
         self::$dispatcher = \FastRoute\cachedDispatcher(function (\FastRoute\RouteCollector $r) {
             self::$routes = $r;
-            require_once FWSWOOLE_ROOT . DS . 'routes' . DS . 'web.php';
+            require_once APP_ROOT . '/routes/web.php';
         }, [
-            'cacheFile' => FWSWOOLE_ROOT . DS . 'storage' . DS . 'cache' . DS . 'route' . DS . time('YmdHis') . rand() . rand() . '.cache', /* required */
+            'cacheFile' => APP_ROOT . 'storage/cache/route/' . time('YmdHis') . rand() . rand() . '.cache', /* required */
             'cacheDisabled' => false, /* optional, enabled by default */
         ]);
     }
