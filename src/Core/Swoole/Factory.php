@@ -1,5 +1,5 @@
 <?php
-namespace Ububs\Core\Tool;
+namespace Ububs\Core\Swoole;
 
 class Factory
 {

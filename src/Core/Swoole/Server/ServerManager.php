@@ -1,19 +1,18 @@
 <?php
 namespace Ububs\Core\Swoole\Server;
 
-
-
 class ServerManager
 {
 
     private static $instance;
     private static $serverInstance;
+    private static $serverType;
 
     const SWOOLE_SERVER           = 'SWOOLE_SERVER';
     const SWOOLE_HTTP_SERVER      = 'SWOOLE_HTTP_SERVER';
     const SWOOLE_WEBSOCKET_SERVER = 'SWOOLE_WEBSOCKET_SERVER';
 
-    public static function getInstance(): Server
+    public static function getInstance(): ServerManager
     {
         if (!isset(self::$instance)) {
             self::$instance = new ServerManager();
@@ -21,27 +20,36 @@ class ServerManager
         return self::$instance;
     }
 
-    private function initServer()
+    public function initServer()
     {
         if (isset(self::$serverInstance)) {
             return self::$serverInstance;
         }
-        self::$serverType = Config::get('server_type');
-        switch (strtoupper(self::$serverType)) {
+        self::$serverType = strtoupper(config('server.server_type'));
+        switch (self::$serverType) {
             case self::SWOOLE_HTTP_SERVER:
-                self::$serverInstance = \Ububs\Core\Swoole\Server\Http::getInstance();
+                self::$serverInstance = \Ububs\Core\Swoole\Server\Adapter\Http::getInstance();
                 break;
 
             case self::SWOOLE_WEBSOCKET_SERVER:
-                self::$serverInstance = \Ububs\Core\Swoole\Server\Websocket::getInstance();
+                self::$serverInstance = \Ububs\Core\Swoole\Server\Adapter\Websocket::getInstance();
                 break;
         }
         self::$serverInstance->init();
-        EventManager::getInstance()->registerEvents();
     }
 
-    private function getServer()
+    public function getServerInstance()
+    {
+        return self::$serverInstance;
+    }
+
+    public function getServer()
     {
         return self::$serverInstance->getServer();
+    }
+
+    public function getServerType()
+    {
+        return self::$serverType;
     }
 }

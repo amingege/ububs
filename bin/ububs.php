@@ -23,10 +23,9 @@
  */
 // 全局变量初始化
 define('DS', DIRECTORY_SEPARATOR);
-// 相对路径
-
 define('UBUBS_ROOT', __DIR__ . '/../src/');
-define('APP_ROOT', realpath(getcwd()));
+// define('APP_ROOT', realpath(getcwd()));
+define('APP_ROOT', __DIR__ . '/../../../../');
 
 // composer 自动加载类
 foreach ([__DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php'] as $file) {
@@ -76,7 +75,7 @@ class UbubsCommand
     {
         $this->checkEnvironment();
         // 配置文件初始化
-        Config::load([UBUBS_ROOT . 'config', __DIR__ . '/../../../../config']);
+        Config::load([UBUBS_ROOT . 'Config', APP_ROOT . 'config']);
         \date_default_timezone_set(Config::get('timezone', 'Asia/Shanghai'));
     }
 
@@ -117,21 +116,18 @@ class UbubsCommand
 
     private function checkEnvironment()
     {
-        return true;
         if (version_compare(phpversion(), '7.1', '<')) {
             die("PHP version\e[31m must >= 7.1\e[0m\n");
         }
         if (version_compare(phpversion('swoole'), '1.9.5', '<')) {
             die("Swoole extension version\e[31m must >= 1.9.5\e[0m\n");
         }
-        if (!class_exists('EasySwoole\Core\Core')) {
-            die("Autoload fail!\nPlease try to run\e[31m composer install\e[0m in " . EASYSWOOLE_ROOT . "\n");
-        }
     }
 
     private function installFramework()
     {
-
+        dir_make(APP_ROOT . 'config');
+        dir_make(APP_ROOT . 'app/Http/Controllers');
     }
 
     private function commandAssemble($type, $action)

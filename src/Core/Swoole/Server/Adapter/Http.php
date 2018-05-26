@@ -1,25 +1,17 @@
 <?php
-namespace Ububs\Core\Swoole\Server;
+namespace Ububs\Core\Swoole\Server\Adapter;
 
 use Ububs\Core\Request;
 use Ububs\Core\Response;
 use Ububs\Core\Tool\Config;
 use Ububs\DB\DB;
 use Ububs\Route\Route;
+use Ububs\Core\Swoole\Factory;
 
-class Http
+class Http extends Factory
 {
-
-    private static $instance;
     private static $server;
-
-    public static function getInstance(): Server
-    {
-        if (!isset(self::$instance)) {
-            self::$instance = new SwooleHttpServer();
-        }
-        return self::$instance;
-    }
+    private static $client = null;
 
     /**
      * swoole_http_server服务初始化
@@ -30,7 +22,7 @@ class Http
         if (!\extension_loaded('swoole')) {
             throw new \Exception("no swoole extension. get: https://github.com/swoole/swoole-src");
         }
-        $config       = Config::get('swoole_http_server');
+        $config       = config('server.swoole_http_server');
         self::$server = new \Swoole_http_server($config['host'], $config['port']);
         self::$server->set(
             array(
@@ -41,25 +33,27 @@ class Http
                 'debug_mode'               => $config['debug_mode'],
                 'task_worker_num'          => $config['task_worker_num'],
                 'heartbeat_check_interval' => $config['heartbeat_check_interval'],
-                'heartbeat_idle_time'      => $config['heartbeat_idle_time'],
+                'heartbeat_idle_time'      => $config['heartbeat_idle_time']
             )
         );
-        $this->setClient(Config::get('swoole_callback_client'));
+        $this->setClient(config('server.swoole_callback_client'));
+    }
+
+    public function getServer()
+    {
+        return self::$server;
     }
 
     /**
      * 设置客户端回调对象
      * @param object $client 客户端类
      */
-    public function setClient()
+    public function setClient($client)
     {
-        if (!is_object($client)) {
-            throw new \Exception('client must object');
+        if (!class_exists($client)) {
+            return null;
         }
-        if (!($client instanceof \ServerManager)) {
-            throw new \Exception('client must extends ServerManager');
-        }
-        self::$client = $client;
+        self::$client = new $client;
     }
 
     /**
@@ -69,7 +63,9 @@ class Http
      */
     public function onStart($serv)
     {
-        self::$client->onStart($serv);
+        if (self::$client !== null && method_exists(self::$client, 'onStart')) {
+            self::$client->onStart($serv);
+        }
     }
 
     /**
@@ -85,21 +81,17 @@ class Http
 
         }
         if ($worker_id == 0) {
-            // 定时器
-            // self::$server->tick(1000, function() {
-            //     file_put_contents(Ububs_ROOT . '/time2.txt', 1, FILE_APPEND);
-            // });
-            // swoole_timer_tick(1000, function() {
-            //     file_put_contents(Ububs_ROOT . '/time.txt', 1, FILE_APPEND);
-            // });
+            
         }
-        DB::getInstance()->connect();
-        self::$client->onWorkerStart($serv, $worker_id);
+
+        if (self::$client !== null && method_exists(self::$client, 'onWorkerStart')) {
+            self::$client->onWorkerStart($serv, $worker_id);
+        }
     }
 
     public function onWorkerError(swoole_server $serv, int $worker_id, int $worker_pid, int $exit_code, int $signal)
     {
-        
+
     }
 
     /**

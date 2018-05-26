@@ -1,5 +1,5 @@
 <?php
-namespace FwSwoole\Server\Adapter;
+namespace Ububs\Core\Swoole\Server\Adapter;
 
 class Websocket
 {

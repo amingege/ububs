@@ -9,13 +9,19 @@ class EventManager
     private static $instance;
     private $registerEventsLists = [
         'swoole_http_server' => [
-            'start' => 'onStart'
+            
+            'Start' => 'onStart',
+            'WorkerStart' => 'onWorkerStart',
+            'WorkerError' => 'onWorkerError',
+            'Request' => 'onRequest',
+            'Task' => 'onTask',
+            'Finish' => 'onFinish'
         ],
         'swoole_server' => [],
-        'swoole_websocket_server' => [],
+        'swoole_websocket_server' => []
     ];
 
-    public static function getInstance(): Server
+    public static function getInstance()
     {
         if (!isset(self::$instance)) {
             self::$instance = new EventManager();
@@ -30,7 +36,7 @@ class EventManager
         $events = $this->registerEventsLists[strtolower($type)];
         if (!empty($events)) {
             foreach ($events as $event => $callback) {
-                $server->on($event, [ServerManager::getInstance(), $callback])
+                $server->on($event, [ServerManager::getInstance()->getServerInstance(), $callback]);
             }
         }
     }
