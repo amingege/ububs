@@ -30,9 +30,10 @@ foreach ([__DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php
 }
 
 use Ububs\Component\Command\Adapter\Server;
+use Ububs\Core\Ububs;
 use Ububs\Core\Swoole\Server\ServerManager;
-use Ububs\Core\Swoole\Server\DbManager;
-use Ububs\Ububs;
+use FwSwoole\Component\Db\Db;
+use Ububs\Core\Swoole\Event\EventManager;
 
 class UbubsCommand
 {
@@ -49,17 +50,18 @@ class UbubsCommand
     const DB_SEED      = 'DB_SEED';
     const DB_MIGRATION = 'DB_MIGRATION';
 
-    private static $codeMessage = [
+    private $codeMessage = [
         'ERROR_INPUT'            => '请输入正确的命令',
         'INIT_FRAMEWORK_SUCCESS' => '框架初始化成功',
         'SERVER_START_SUCCESS'   => '服务器开启成功',
     ];
 
-    private static $serverCommand = ['start' => 'start', 'restart' => 'restart', 'stop' => 'stop'];
-    private static $dbCommand     = ['seed' => 'seed', 'migration' => 'migration'];
+    private $serverCommand = ['start' => 'serverStart', 'restart', 'stop'];
+    private $dbCommand     = ['seed', 'migration'];
 
     public function __construct()
     {
+        $this->checkEnvironment();
         // 全局变量初始化
         // define('DS', DIRECTORY_SEPARATOR);
         // define('UBUBS_ROOT', realpath(getcwd()));
@@ -74,41 +76,21 @@ class UbubsCommand
      */
     public function run()
     {
-        $this->checkEnvironment();
         list($command, $params) = $this->parseCommand();
-        if (strpos(':', $command) === false) {
+        if (strpos($command, ':') === false) {
             switch (strtoupper($command)) {
                 case self::INSTALL_FRAMEWORK:
                     $this->installFramework();
                     break;
 
                 default:
-                    die(self::$codeMessage['ERROR_INPUT']);
+                    die($this->codeMessage['ERROR_INPUT']);
                     break;
             }
         } else {
             list($type, $action) = explode(':', $command);
-            switch (strtoupper($type)) {
-                case self::TYPE_SERVER:
-                    $action = $this->serverCommandAssemble($action);
-                    if (!$action) {
-                        die(self::$codeMessage['ERROR_INPUT']);
-                    }
-                    ServerManager::getInstance()->$action();
-                    break;
-
-                case self::TYPE_DB:
-                    $action = $this->dbCommandAssemble($action);
-                    if (!$action) {
-                        die(self::$codeMessage['ERROR_INPUT']);
-                    }
-                    DbManager::getInstance()->$action($params);
-                    break;
-
-                default:
-                    die(self::$codeMessage['ERROR_INPUT']);
-                    break;
-            }
+            $commandFunc         = $this->commandAssemble($type, $action);
+            $this->$commandFunc($params);
         }
     }
 
@@ -116,7 +98,7 @@ class UbubsCommand
     {
         global $argv;
         if (!isset($argv[1])) {
-            die(self::$codeMessage['ERROR_INPUT']);
+            die($this->codeMessage['ERROR_INPUT']);
         }
         $command = $argv[1];
         $params  = isset($argv[2]) ? $argv[2] : '';
@@ -124,7 +106,7 @@ class UbubsCommand
     }
 
     private function checkEnvironment()
-    {
+    {return true;
         if (version_compare(phpversion(), '7.1', '<')) {
             die("PHP version\e[31m must >= 7.1\e[0m\n");
         }
@@ -138,17 +120,43 @@ class UbubsCommand
 
     private function installFramework()
     {
-        
+
     }
 
-    private function serverCommandAssemble($action)
+    private function commandAssemble($type, $action)
     {
-        return isset($this->serverCommand[$action]) ? $this->serverCommand[$action] : '';
+        $commandLists = [];
+        switch ($type = strtoupper($type)) {
+            case self::TYPE_SERVER:
+                $commandLists = $this->serverCommand;
+                break;
+
+            case self::TYPE_DB:
+                $commandLists = $this->dbCommand;
+                break;
+        }
+        $commandFunc = isset($commandLists[$action]) ? $commandLists[$action] : (in_array($action, $commandLists) ? $action : '');
+        if (!$commandFunc) {
+            die($this->codeMessage['ERROR_INPUT']);
+        }
+        return $commandFunc;
     }
 
-    private function dbCommandAssemble($action)
+    private function serverStart()
     {
-        return isset($this->dbCommand[$action]) ? $this->dbCommand[$action] : '';
+        ServerManager::getInstance()->initServer();
+        EventManager::getInstance()->addEventListener();
+        ServerManager::getInstance()->getServer()->start();
+    }
+
+    private function serverStop($params)
+    {
+        ServerManager::getInstance()->stop();
+    }
+
+    private function serverReload($params)
+    {
+        ServerManager::getInstance()->reload();
     }
 }
 

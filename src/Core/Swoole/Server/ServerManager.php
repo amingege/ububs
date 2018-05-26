@@ -1,12 +1,13 @@
 <?php
 namespace Ububs\Core\Swoole\Server;
 
+
+
 class ServerManager
 {
 
     private static $instance;
     private static $serverInstance;
-    private static $isStart = false;
 
     const SWOOLE_SERVER           = 'SWOOLE_SERVER';
     const SWOOLE_HTTP_SERVER      = 'SWOOLE_HTTP_SERVER';
@@ -20,33 +21,12 @@ class ServerManager
         return self::$instance;
     }
 
-    public function start(): void
-    {
-        $this->initServer();
-        $this->addEventListener();
-        $this->getServer()->start();
-    }
-
-    public function stop()
-    {
-        if (!self::$isStart) {
-            return true;
-        }
-        $this->getServer()->stop();
-    }
-
-    public function restart()
-    {
-        $this->stop();
-        $this->start();
-    }
-
-    private function initServer(): void
+    private function initServer()
     {
         if (isset(self::$serverInstance)) {
             return self::$serverInstance;
         }
-        self::$serverType = Config::get('app.server_type', 'SWOOLE_HTTP_SERVER');
+        self::$serverType = Config::get('server_type');
         switch (strtoupper(self::$serverType)) {
             case self::SWOOLE_HTTP_SERVER:
                 self::$serverInstance = \Ububs\Core\Swoole\Server\Http::getInstance();
@@ -55,21 +35,12 @@ class ServerManager
             case self::SWOOLE_WEBSOCKET_SERVER:
                 self::$serverInstance = \Ububs\Core\Swoole\Server\Websocket::getInstance();
                 break;
-
-            default:
-                # code...
-                break;
         }
-        self::$isStart = true;
         self::$serverInstance->init();
+        EventManager::getInstance()->registerEvents();
     }
 
-    private function addEventListener(): void
-    {
-        self::$serverInstance->addEventListener();
-    }
-
-    private function getServer():  ? \swoole_server
+    private function getServer()
     {
         return self::$serverInstance->getServer();
     }

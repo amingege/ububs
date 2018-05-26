@@ -30,60 +30,36 @@ class Http
         if (!\extension_loaded('swoole')) {
             throw new \Exception("no swoole extension. get: https://github.com/swoole/swoole-src");
         }
-        $config                   = Config::get('app.swoole_http_server');
-        $host                     = isset($config['host']) ? strval($config['host']) : '0.0.0.0';
-        $port                     = isset($config['port']) ? strval($config['port']) : '9501';
-        $worker_num               = isset($config['worker_num']) ? intval($config['worker_num']) : 4;
-        $daemonize                = isset($config['daemonize']) ? intval($config['daemonize']) : false;
-        $max_request              = isset($config['max_request']) ? intval($config['max_request']) : 10000;
-        $dispatch_mode            = isset($config['dispatch_mode']) ? intval($config['dispatch_mode']) : 3;
-        $debug_mode               = isset($config['debug_mode']) ? intval($config['debug_mode']) : 1;
-        $task_worker_num          = isset($config['task_worker_num']) ? intval($config['task_worker_num']) : 4;
-        $heartbeat_check_interval = isset($config['heartbeat_check_interval']) ? intval($config['heartbeat_check_interval']) : 60;
-        $heartbeat_idle_time      = isset($config['heartbeat_idle_time']) ? intval($config['heartbeat_idle_time']) : 600;
-        self::$server             = new \Swoole_http_server($host, $port);
-        // 初始化配置
+        $config       = Config::get('swoole_http_server');
+        self::$server = new \Swoole_http_server($config['host'], $config['port']);
         self::$server->set(
             array(
-                'worker_num'               => $worker_num,
-                'daemonize'                => $daemonize,
-                'max_request'              => $max_request,
-                'dispatch_mode'            => $dispatch_mode,
-                'debug_mode'               => $debug_mode,
-                'task_worker_num'          => $task_worker_num,
-                'heartbeat_check_interval' => $heartbeat_check_interval,
-                'heartbeat_idle_time'      => $heartbeat_idle_time,
+                'worker_num'               => $config['worker_num'],
+                'daemonize'                => $config['daemonize'],
+                'max_request'              => $config['max_request'],
+                'dispatch_mode'            => $config['dispatch_mode'],
+                'debug_mode'               => $config['debug_mode'],
+                'task_worker_num'          => $config['task_worker_num'],
+                'heartbeat_check_interval' => $config['heartbeat_check_interval'],
+                'heartbeat_idle_time'      => $config['heartbeat_idle_time'],
             )
         );
+        $this->setClient(Config::get('swoole_callback_client'));
     }
 
     /**
      * 设置客户端回调对象
      * @param object $client 客户端类
      */
-    public function setClient($client)
+    public function setClient()
     {
         if (!is_object($client)) {
             throw new \Exception('client must object');
         }
-        if (!($client instanceof self)) {
-            throw new \Exception('client must extends swoole server');
+        if (!($client instanceof \ServerManager)) {
+            throw new \Exception('client must extends ServerManager');
         }
         self::$client = $client;
-    }
-
-    /**
-     * 注册时间
-     * @return void
-     */
-    public function addEventListener()
-    {
-        self::$server->on('Start', array($this, 'doStart'));
-        self::$server->on('WorkerStart', array($this, 'doWorkerStart'));
-        self::$server->on('WorkerError', array($this, 'doWorkerError'));
-        self::$server->on('request', array($this, 'doRequest'));
-        self::$server->on('Task', array($this, 'doTask'));
-        self::$server->on('Finish', array($this, 'doFinish'));
     }
 
     /**
@@ -91,7 +67,7 @@ class Http
      * @param  object $serv server对象
      * @return void
      */
-    public function doStart($serv)
+    public function onStart($serv)
     {
         self::$client->onStart($serv);
     }
@@ -102,7 +78,7 @@ class Http
      * @param  int    $worker_id 进程id
      * @return void
      */
-    public function doWorkerStart($serv, $worker_id)
+    public function onWorkerStart($serv, $worker_id)
     {
         // 判定是否为Task Worker进程
         if ($worker_id >= self::$server->setting['worker_num']) {
@@ -121,10 +97,9 @@ class Http
         self::$client->onWorkerStart($serv, $worker_id);
     }
 
-    public function doWorkerError(swoole_server $serv, int $worker_id, int $worker_pid, int $exit_code, int $signal)
+    public function onWorkerError(swoole_server $serv, int $worker_id, int $worker_pid, int $exit_code, int $signal)
     {
-        echo 11111;
-        return 11111;
+        
     }
 
     /**
@@ -133,7 +108,7 @@ class Http
      * @param  \swoole_http_response $response response对象
      * @return void
      */
-    public function doRequest(\swoole_http_request $request, \swoole_http_response $response)
+    public function onRequest(\swoole_http_request $request, \swoole_http_response $response)
     {
         if ($request->server['path_info'] == '/favicon.ico' || $request->server['request_uri'] == '/favicon.ico') {
             return $response->end();
@@ -183,7 +158,7 @@ class Http
      * task 动作回调
      * @return void
      */
-    public function doTask($serv, $task_id, $from_id, $data)
+    public function onTask($serv, $task_id, $from_id, $data)
     {
         $data     = \json_decode($data, true);
         $taskType = $data['__TASK_TYPE__'];
@@ -195,7 +170,7 @@ class Http
      * finish 动作回调
      * @return void
      */
-    public function doFinish($serv, $task_id, $data)
+    public function onFinish($serv, $task_id, $data)
     {
         self::$client->onTaskFinish($serv, $task_id, $data);
     }
