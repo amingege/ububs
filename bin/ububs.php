@@ -29,27 +29,25 @@ foreach ([__DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php
     }
 }
 
-use Ububs\Component\Command\Adapter\Database;
 use Ububs\Component\Command\Adapter\Server;
-use Ububs\Core\Tool\Config;
-use Ububs\Core\Tool\Dir;
+use Ububs\Core\Swoole\Server\ServerManager;
+use Ububs\Core\Swoole\Server\DbManager;
 use Ububs\Ububs;
-use Ububs\DB\Schema;
 
 class UbubsCommand
 {
 
-    const TYPE_INSTALL = 'install';
-    const TYPE_SERVER  = 'server';
-    const TYPE_DB      = 'db';
+    const INSTALL_FRAMEWORK = 'INSTALL';
 
-    const SERVER_START   = 'start';
-    const SERVER_STOP    = 'stop';
-    const SERVER_RESTART = 'restart';
+    const TYPE_SERVER = 'SERVER';
+    const TYPE_DB     = 'DB';
 
-    const DB_MIGRATION = 'migration';
-    const DB_SEED      = 'seed';
-    const DB_REFRESH   = 'refresh';
+    const SERVER_START   = 'SERVER_START';
+    const SERVER_STOP    = 'SERVER_STOP';
+    const SERVER_RESTART = 'SERVER_RESTART';
+
+    const DB_SEED      = 'DB_SEED';
+    const DB_MIGRATION = 'DB_MIGRATION';
 
     private static $codeMessage = [
         'ERROR_INPUT'            => '请输入正确的命令',
@@ -57,14 +55,17 @@ class UbubsCommand
         'SERVER_START_SUCCESS'   => '服务器开启成功',
     ];
 
+    private static $serverCommand = ['start' => 'start', 'restart' => 'restart', 'stop' => 'stop'];
+    private static $dbCommand     = ['seed' => 'seed', 'migration' => 'migration'];
+
     public function __construct()
     {
         // 全局变量初始化
-        define('DS', DIRECTORY_SEPARATOR);
-        define('UBUBS_ROOT', realpath(getcwd()));
-        // 配置文件初始化
-        Config::load(UBUBS_ROOT . '/config');
-        \date_default_timezone_set(Config::get('timezone', 'Asia/Shanghai'));
+        // define('DS', DIRECTORY_SEPARATOR);
+        // define('UBUBS_ROOT', realpath(getcwd()));
+        // // 配置文件初始化
+        // Config::load(UBUBS_ROOT . '/config');
+        // \date_default_timezone_set(Config::get('timezone', 'Asia/Shanghai'));
     }
 
     /**
@@ -73,127 +74,81 @@ class UbubsCommand
      */
     public function run()
     {
+        $this->checkEnvironment();
+        list($command, $params) = $this->parseCommand();
+        if (strpos(':', $command) === false) {
+            switch (strtoupper($command)) {
+                case self::INSTALL_FRAMEWORK:
+                    $this->installFramework();
+                    break;
+
+                default:
+                    die(self::$codeMessage['ERROR_INPUT']);
+                    break;
+            }
+        } else {
+            list($type, $action) = explode(':', $command);
+            switch (strtoupper($type)) {
+                case self::TYPE_SERVER:
+                    $action = $this->serverCommandAssemble($action);
+                    if (!$action) {
+                        die(self::$codeMessage['ERROR_INPUT']);
+                    }
+                    ServerManager::getInstance()->$action();
+                    break;
+
+                case self::TYPE_DB:
+                    $action = $this->dbCommandAssemble($action);
+                    if (!$action) {
+                        die(self::$codeMessage['ERROR_INPUT']);
+                    }
+                    DbManager::getInstance()->$action($params);
+                    break;
+
+                default:
+                    die(self::$codeMessage['ERROR_INPUT']);
+                    break;
+            }
+        }
+    }
+
+    private function parseCommand()
+    {
         global $argv;
         if (!isset($argv[1])) {
-            exit(self::$codeMessage['ERROR_INPUT']);
+            die(self::$codeMessage['ERROR_INPUT']);
         }
-        $result = '';
-        try {
-            if (strpos($argv[1], ':') === false) {
-                $result = $this->parseSimpleCommand();
-            } else {
-                // server:start 等复杂命令
-                $result = $this->parseComplexCommand();
-            }
-        } catch (Exception $e) {
-            $result = $e->getMessage();
-        }
-        return $result;
+        $command = $argv[1];
+        $params  = isset($argv[2]) ? $argv[2] : '';
+        return [$command, $params];
     }
 
-    private function parseSimpleCommand()
+    private function checkEnvironment()
     {
-        global $argv;
-        $result = '';
-        switch (strtolower($argv[1])) {
-            case self::TYPE_INSTALL:
-                // 框架部署
-                $result = $this->initFramework();
-                break;
-
-            default:
-                # code...
-                break;
+        if (version_compare(phpversion(), '7.1', '<')) {
+            die("PHP version\e[31m must >= 7.1\e[0m\n");
         }
-        return $result;
+        if (version_compare(phpversion('swoole'), '1.9.5', '<')) {
+            die("Swoole extension version\e[31m must >= 1.9.5\e[0m\n");
+        }
+        if (!class_exists('EasySwoole\Core\Core')) {
+            die("Autoload fail!\nPlease try to run\e[31m composer install\e[0m in " . EASYSWOOLE_ROOT . "\n");
+        }
     }
 
-    private function parseComplexCommand()
+    private function installFramework()
     {
-        global $argv;
-        $result              = '';
-        list($type, $action) = explode(':', strtolower($argv[1]));
-        switch (strtolower($type)) {
-            case self::TYPE_SERVER:
-                $result = $this->serverAction($action);
-                break;
-
-            case self::TYPE_DB:
-                $result = $this->dbAction($action);
-                break;
-
-            default:
-                # code...
-                break;
-        }
-        return $result;
+        
     }
 
-    private function serverAction($action)
+    private function serverCommandAssemble($action)
     {
-        $result = '';
-        switch ($action) {
-            case self::SERVER_START:
-                $result = Ububs::start();
-                if ($result) {
-                    $result = self::$codeMessage['SERVER_START_SUCCESS'];
-                }
-                break;
-
-            case self::SERVER_STOP:
-                $result = Ububs::stop();
-                break;
-
-            case self::SERVER_RESTART:
-                $result = Ububs::restart();
-                break;
-
-            default:
-                # code...
-                break;
-        }
-        return $result;
+        return isset($this->serverCommand[$action]) ? $this->serverCommand[$action] : '';
     }
 
-    private function dbAction($action)
+    private function dbCommandAssemble($action)
     {
-        global $argv;
-        $commandParamsCount = count($argv);
-        $argv2              = isset($argv[2]) ? strtolower($argv[2]) : '';
-        $result             = '';
-        switch ($action) {
-            case self::DB_MIGRATION:
-                // 执行 /database/migrations 目录下的所有文件
-                $targetDir = UBUBS_ROOT . DS . 'databases' . DS . 'Migrations';
-                if (strpos($argv2, '--')) {
-                    $targetDir .= DS . mb_substr($argv2, 2);
-                    if (isset($argv[3]) && strtolower($argv[3]) == self::DB_REFRESH) {
-                        Schema::setRefreshFlag();
-                    }
-                } else if ($argv2 === self::DB_REFRESH) {
-                    Schema::setRefreshFlag();
-                }
-                $result = $this->runDirFunction($targetDir);
-                break;
-
-            case self::DB_SEED:
-                // 执行 /database/seeds 目录下的所有文件
-                $targetDir = UBUBS_ROOT . DS . 'databases' . DS . 'Seeds';
-                if (strpos($argv2, '--')) {
-                    $targetDir .= DS . mb_substr($argv2, 2);
-                    if (isset($argv[3]) && strtolower($argv[3]) == self::DB_REFRESH) {
-                        Schema::setRefreshFlag();
-                    }
-                } else if ($argv2 === self::DB_REFRESH) {
-                    Schema::setRefreshFlag();
-                }
-                $result = $this->runDirFunction($targetDir);
-                break;
-
-            default:
-                # code...
-                break;
-        }
+        return isset($this->dbCommand[$action]) ? $this->dbCommand[$action] : '';
     }
 }
 

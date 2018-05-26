@@ -1,5 +1,5 @@
 <?php
-namespace Ububs\Core\Http;
+namespace Ububs\Core\Swoole\Server;
 
 class ServerManager
 {
@@ -7,6 +7,7 @@ class ServerManager
     private static $instance;
     private static $serverInstance;
     private static $isStart = false;
+
     const SWOOLE_SERVER           = 'SWOOLE_SERVER';
     const SWOOLE_HTTP_SERVER      = 'SWOOLE_HTTP_SERVER';
     const SWOOLE_WEBSOCKET_SERVER = 'SWOOLE_WEBSOCKET_SERVER';
@@ -21,7 +22,7 @@ class ServerManager
 
     public function start(): void
     {
-        $this->serverInit();
+        $this->initServer();
         $this->addEventListener();
         $this->getServer()->start();
     }
@@ -31,7 +32,7 @@ class ServerManager
         if (!self::$isStart) {
             return true;
         }
-        
+        $this->getServer()->stop();
     }
 
     public function restart()
@@ -40,7 +41,7 @@ class ServerManager
         $this->start();
     }
 
-    private function serverInit(): void
+    private function initServer(): void
     {
         if (isset(self::$serverInstance)) {
             return self::$serverInstance;
