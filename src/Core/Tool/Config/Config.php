@@ -1,11 +1,13 @@
 <?php
 namespace Ububs\Core\Tool\Config;
-use Ububs\Core\Tool\Factory;
 
-class Config extends Factory
+class Config
 {
 
     public static $config;
+
+    private function __construct()
+    {}
 
     /**
      * 获取配置
@@ -14,7 +16,7 @@ class Config extends Factory
      * @param  boolean $strict  是否严格匹配
      * @return string | array
      */
-    public static function get($data, $default = null, $strict = false)
+    public static function get($data, $default = null)
     {
         $fileName = $key = '';
         if (strpos($data, '.') > -1) {
@@ -25,9 +27,6 @@ class Config extends Factory
         $result = isset(self::$config[$fileName]) ? self::$config[$fileName] : $default;
         if ($key !== '' && isset(self::$config[$fileName])) {
             $result = isset($result[$key]) ? $result[$key] : $default;
-        }
-        if ($strict && is_null($result)) {
-            throw new \Exception("{data} config empty");
         }
         return $result;
     }
@@ -48,7 +47,10 @@ class Config extends Factory
             $fileName = $data;
         }
         if ($key === '') {
-            if (isset(self::$config[$fileName])) return false;
+            if (isset(self::$config[$fileName])) {
+                return false;
+            }
+
             self::$config[$fileName] = $value;
         } else {
             $fileExist = isset(self::$config[$fileName]);
@@ -67,25 +69,31 @@ class Config extends Factory
 
     /**
      * 加载配置文件
-     * @param  string $configPath 目录
+     * @param  array $configPath 目录
      * @return bool
      */
-    public static function load($configPath)
+    public static function load($configDirArr): void
     {
         $config = [];
-        $fileArr = Dir::tree($configPath, "/.php$/");
-        if (!empty($fileArr)) {
-            foreach ($fileArr as $dir => $filenameArr) {
-                array_map(function($filename) use (&$config, $dir) {
-                    $filePath = $dir . DS . $filename;
-                    if (function_exists("opcache_invalidate")) {
-                        \opcache_invalidate($filePath);
-                    }
-                    $config[basename($filename, ".php")] = include "{$filePath}";
-                }, $filenameArr);
+        foreach ($configDirArr as $configDir) {
+            if (!is_dir($configDir)) {
+                continue;
+            }
+            $fileArr = dir_tree($configDir, "/.php$/");
+            if (!empty($fileArr)) {
+                foreach ($fileArr as $dir => $filenameArr) {
+                    array_map(function ($filename) use (&$config, $dir) {
+                        $filePath = $dir . DS . $filename;
+                        if (function_exists("opcache_invalidate")) {
+                            \opcache_invalidate($filePath);
+                        }
+                        $configKey          = basename($filename, ".php");
+                        $configContent      = include "{$filePath}";
+                        $config[$configKey] = isset($config[$configKey]) ? array_merge($config[$configKey], $configContent) : $configContent;
+                    }, $filenameArr);
+                }
             }
         }
         self::$config = $config;
-        return true;
     }
 }

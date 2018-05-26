@@ -21,7 +21,14 @@
  * php ububs db:seed refresh
  * php ububs db:seed --目录名
  */
+// 全局变量初始化
+define('DS', DIRECTORY_SEPARATOR);
+// 相对路径
 
+define('UBUBS_ROOT', __DIR__ . '/../src/');
+define('APP_ROOT', realpath(getcwd()));
+
+// composer 自动加载类
 foreach ([__DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php'] as $file) {
     if (file_exists($file)) {
         require $file;
@@ -29,11 +36,17 @@ foreach ([__DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php
     }
 }
 
-use Ububs\Component\Command\Adapter\Server;
-use Ububs\Core\Ububs;
-use Ububs\Core\Swoole\Server\ServerManager;
+// 公共方法引入
+foreach (getToolFilePaths(UBUBS_ROOT . 'Tool') as $file) {
+    require $file;
+}
+
 use FwSwoole\Component\Db\Db;
+use Ububs\Component\Command\Adapter\Server;
 use Ububs\Core\Swoole\Event\EventManager;
+use Ububs\Core\Swoole\Server\ServerManager;
+use Ububs\Core\Tool\Config\Config;
+use Ububs\Core\Ububs;
 
 class UbubsCommand
 {
@@ -62,12 +75,9 @@ class UbubsCommand
     public function __construct()
     {
         $this->checkEnvironment();
-        // 全局变量初始化
-        // define('DS', DIRECTORY_SEPARATOR);
-        // define('UBUBS_ROOT', realpath(getcwd()));
-        // // 配置文件初始化
-        // Config::load(UBUBS_ROOT . '/config');
-        // \date_default_timezone_set(Config::get('timezone', 'Asia/Shanghai'));
+        // 配置文件初始化
+        Config::load([UBUBS_ROOT . 'config', __DIR__ . '/../../../../config']);
+        \date_default_timezone_set(Config::get('timezone', 'Asia/Shanghai'));
     }
 
     /**
@@ -106,7 +116,8 @@ class UbubsCommand
     }
 
     private function checkEnvironment()
-    {return true;
+    {
+        return true;
         if (version_compare(phpversion(), '7.1', '<')) {
             die("PHP version\e[31m must >= 7.1\e[0m\n");
         }
@@ -158,6 +169,19 @@ class UbubsCommand
     {
         ServerManager::getInstance()->reload();
     }
+}
+
+function getToolFilePaths($dir)
+{
+    $result = [];
+    $files = new \DirectoryIterator($dir);
+    foreach ($files as $file) {
+        if ($file->isDot()) {
+            continue;
+        }
+        $result[] = $file->getPathName();
+    }
+    return $result;
 }
 
 $ububs = new UbubsCommand();
