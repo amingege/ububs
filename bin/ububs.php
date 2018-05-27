@@ -133,6 +133,9 @@ class UbubsCommand
         if (!is_file($routePath)) {
             file_put_contents($routePath, $this->routerWebContent());
         }
+        dir_make(APP_ROOT . 'resources/assets');
+        dir_make(APP_ROOT . 'resources/images');
+        dir_make(APP_ROOT . 'resources/views');
     }
 
     private function commandAssemble($type, $action)

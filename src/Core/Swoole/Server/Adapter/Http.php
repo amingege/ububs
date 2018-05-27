@@ -1,6 +1,7 @@
 <?php
 namespace Ububs\Core\Swoole\Server\Adapter;
 
+use Ububs\Core\Component\Db\Db;
 use Ububs\Core\Http\Interaction\Request;
 use Ububs\Core\Http\Interaction\Response;
 use Ububs\Core\Http\Interaction\Route;
@@ -11,6 +12,8 @@ class Http extends Factory
 {
     private static $server;
     private static $client = null;
+
+    private static $taskType = ['DB'];
 
     /**
      * swoole_http_server服务初始化
@@ -80,8 +83,9 @@ class Http extends Factory
 
         }
         if ($worker_id == 0) {
-
+            cli_set_process_title('php manager work');
         }
+        // 连接数据库
 
         if (self::$client !== null && method_exists(self::$client, 'onWorkerStart')) {
             self::$client->onWorkerStart($serv, $worker_id);
@@ -136,7 +140,6 @@ class Http extends Factory
                 \ob_end_clean();
                 break;
         }
-
         if (!Response::isEnd()) {
             $response->end($result);
         }
@@ -148,10 +151,23 @@ class Http extends Factory
      */
     public function onTask($serv, $task_id, $from_id, $data)
     {
-        $data     = \json_decode($data, true);
-        $taskType = $data['__TASK_TYPE__'];
-        unset($data['__TASK_TYPE__']);
-        self::$client->onTask($serv, $task_id, $from_id, $taskType, $data);
+        $type = is_array($data) && isset($data['__TASK_TYPE__']) && in_array($data['__TASK_TYPE__'], self::$taskType) ? $data['__TASK_TYPE__'] : '';
+        if ($type === '') {
+            self::$client->onTask($serv, $task_id, $from_id, $data);
+        } else {
+            $result = '';
+            $data   = json_decode($data['data'], true);
+            switch (strtoupper($type)) {
+                case 'DB':
+                    $result = Db::query(...$data);
+                    break;
+
+                default:
+                    # code...
+                    break;
+            }
+            $serv->finish($result);
+        }
     }
 
     /**

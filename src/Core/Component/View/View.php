@@ -33,7 +33,7 @@ class View
         $viewPrefix = config('app.view_path', APP_ROOT . 'resources/views');
         // 如果路径为空，自动获取当前执行控制器命名空间为视图前缀
         if ($path === null) {
-            $viewPath = lcfirst(str_replace('App\Http\Controllers', '', Request::getActionNamespace()))  . DS . Request::getActionMethod() . ".php";
+            $viewPath = lcfirst(str_replace('App\Http\Controllers\\', '', Request::getActionNamespace()))  . DS . Request::getActionMethod() . ".php";
         } else {
             $viewPath = str_replace('.', '/', $path) . ".php";
         }

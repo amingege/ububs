@@ -1,5 +1,7 @@
 <?php
 use Ububs\Core\Tool\Config\Config;
+use Ububs\Core\Http\Interaction\Response;
+use Ububs\Core\Swoole\Server\ServerManager;
 
 /**
  * 获取config配置
@@ -12,8 +14,17 @@ function config($key, $default = null)
     return Config::get($key, $default);
 }
 
-
-function view()
+/**
+ * 调试打印内容
+ * @param  array | string | object $data 
+ * @return value       
+ */
+function write_response($data)
 {
-	
+	return Response::write($data);
+}
+
+function getServ()
+{
+	return ServerManager::getServer();
 }

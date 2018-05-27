@@ -1,7 +1,7 @@
 <?php
 namespace FwSwoole\Component\Auth;
 
-use FwSwoole\Core\Factory;
+use Ububs\Core\Component\Factory;
 use FwSwoole\Core\Request;
 use FwSwoole\Core\Tool\Config;
 use FwSwoole\Log\Log;

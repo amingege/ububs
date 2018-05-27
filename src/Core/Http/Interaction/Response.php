@@ -94,9 +94,11 @@ class Response
         ]);
     }
 
-    public function write($data)
+    public static function write($data)
     {
-        self::setEnd();
-        return self::$response->write(json_encode($data));
+        if (is_array($data) || is_object($data)) {
+            $data = json_encode($data);
+        }
+        return self::$response->write($data);
     }
 }

@@ -1,7 +1,7 @@
 <?php
 namespace FwSwoole\Middleware;
 
-use FwSwoole\Core\Factory;
+use Ububs\Core\Component\Factory;
 
 class Kernel extends Factory
 {

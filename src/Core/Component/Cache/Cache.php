@@ -1,7 +1,7 @@
 <?php
 namespace FwSwoole\Component\Cache;
 
-use FwSwoole\Core\Factory;
+use Ububs\Core\Component\Factory;
 use FwSwoole\Core\Tool\Config;
 
 class Cache extends Factory

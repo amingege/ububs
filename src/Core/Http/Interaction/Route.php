@@ -56,39 +56,6 @@ class Route extends Factory
         } catch (\Exception $e) {
             return Response::error(StatusCode::CODE_UNAUTHORIZED, $e->getMessage());
         }
-        // $actionArr = isset($routeInfo[1]) ? $routeInfo[1] : [];
-        // if (empty($actionArr)) {
-        //     throw new \Exception('routers is error, please check it');
-        // }
-
-        // if (isset($actionArr['middleware']) && !empty($actionArr['middleware'])) {
-        //     $middlewareResult = \App\Http\Middleware\Kernel::getInstance()->validate($actionArr['middleware']);
-        //     if (!$middlewareResult) {
-        //         return Response::error(StatusCode::CODE_UNAUTHORIZED);
-        //     }
-        // }
-
-        // if (is_callable($actionArr['action'])) {
-        //     return call_user_func($actionArr['action']);
-        // }
-        // if (is_string($actionArr['action'])) {
-        //     $tempAction       = explode('@', $actionArr['action']);
-        //     self::$controller = isset($tempAction[0]) ? strval($tempAction[0]) : '';
-        //     self::$method     = isset($tempAction[1]) ? strval($tempAction[1]) : 'index';
-        //     self::$namespace  = isset($actionArr['namespace']) ? $actionArr['namespace'] : '';
-        // }
-
-        // // 依赖注入等解析
-        // $diContainer             = Container::getInstance();
-        // $diContainer->controller = self::$namespace . '\\' . self::$controller;
-        // $controller              = $diContainer->controller;
-        // $method                  = self::$method;
-        // $params                  = isset($routeInfo[2]) ? array_values($routeInfo[2]) : [];
-        // try {
-        //     return $controller->$method(...$params);
-        // } catch (\Exception $e) {
-        //     return Response::error(StatusCode::CODE_UNAUTHORIZED, $e->getMessage());
-        // }
     }
 
     public function getDispatcher()
