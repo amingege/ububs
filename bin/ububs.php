@@ -40,13 +40,12 @@ foreach (getToolFilePaths(UBUBS_ROOT . 'Tool') as $file) {
     require $file;
 }
 
-use FwSwoole\Component\Db\Db;
 use Ububs\Component\Command\Adapter\Server;
+use Ububs\Core\Http\Interaction\Route;
 use Ububs\Core\Swoole\Event\EventManager;
 use Ububs\Core\Swoole\Server\ServerManager;
 use Ububs\Core\Tool\Config\Config;
 use Ububs\Core\Ububs;
-use Ububs\Core\Http\Route\Route;
 
 class UbubsCommand
 {
@@ -178,7 +177,7 @@ class UbubsCommand
     {
         return <<<'EOF'
 <?php
-$this->addRoutes('GET', '/frontend', function() {
+$this->addRoute('GET', '/frontend', function() {
     echo 'success';
 });
 EOF;
@@ -188,7 +187,7 @@ EOF;
 function getToolFilePaths($dir)
 {
     $result = [];
-    $files = new \DirectoryIterator($dir);
+    $files  = new \DirectoryIterator($dir);
     foreach ($files as $file) {
         if ($file->isDot()) {
             continue;

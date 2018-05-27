@@ -1,19 +1,18 @@
 <?php
-namespace Ububs\Core\Http\Route;
+namespace Ububs\Core\Http\Interaction;
 
-use App\Http\Middleware\Kernel;
-use FwSwoole\Core\Code;
-use FwSwoole\Core\Container;
-use FwSwoole\Core\Request;
-use FwSwoole\Core\Response;
+use Ububs\Core\Component\Middleware\Middleware;
 use Ububs\Core\Http\Factory;
+use UBubs\Core\Http\Interaction\Response;
+use Ububs\Core\Tool\StatusCode\StatusCode;
 
 class Route extends Factory
 {
     private static $dispatcher;
     private static $routes;
-    private static $controller;
-    private static $method;
+    public static $actionNamespace;
+    public static $actionController;
+    public static $actionMethod;
 
     public function init()
     {
@@ -29,43 +28,67 @@ class Route extends Factory
 
     public function run($routeInfo)
     {
-        $actionArr = isset($routeInfo[1]) ? $routeInfo[1] : [];
-        if (empty($actionArr)) {
+        $routers = isset($routeInfo[1]) ? $routeInfo[1] : [];
+        if (empty($routers)) {
             throw new \Exception('routers is error, please check it');
         }
-
-        // 路由中间件过滤
-        // $authorizationValidate = \FwSwoole\Middleware\Adapter\VerifyCsrfToken::getInstance()->check(Request::getAuthorization());
-        // if (!$authorizationValidate) {
-        //     return Response::error(Code::CODE_UNAUTHORIZED);
-        // }
-        if (isset($actionArr['middleware']) && !empty($actionArr['middleware'])) {
-            $middlewareResult = \App\Http\Middleware\Kernel::getInstance()->validate($actionArr['middleware']);
-            if (!$middlewareResult) {
-                return Response::error(Code::CODE_UNAUTHORIZED);
-            }
+        $middleware = isset($routers['middleware']) && !empty($routers['middleware']) ? $routers['middleware'] : '';
+        if ($middleware !== '' && !$mr = Middleware::validate($middleware)) {
+            return Response::error(StatusCode::CODE_UNAUTHORIZED);
         }
-
-        if (is_callable($actionArr['action'])) {
-            return call_user_func($actionArr['action']);
+        $actions         = isset($routers['action']) ? $routers['action'] : '';
+        self::$actionNamespace = isset($routers['namespace']) ? $routers['namespace'] : '';
+        if ($actions === '') {
+            return Response::error(StatusCode::CODE_UNAUTHORIZED);
         }
-        if (is_string($actionArr['action'])) {
-            $tempAction       = explode('@', $actionArr['action']);
-            self::$controller = isset($tempAction[0]) ? strval($tempAction[0]) : '';
-            self::$method     = isset($tempAction[1]) ? strval($tempAction[1]) : 'index';
+        if (is_callable($actions)) {
+            return call_user_func($actions);
         }
-
+        list(self::$actionController, self::$actionMethod) = explode('@', $actions);
         // 依赖注入等解析
-        $diContainer             = Container::getInstance();
-        $diContainer->controller = $actionArr['namespace'] . '\\' . self::$controller;
-        $controller              = $diContainer->controller;
-        $method                  = self::$method;
-        $params                  = isset($routeInfo[2]) ? array_values($routeInfo[2]) : [];
+        $diContainer    = Container::getInstance();
+        $diContainer->c = self::$actionNamespace . '\\' . self::$actionController;
+        $controller     = $diContainer->c;
+        $method         = self::$actionMethod;
+        $params         = isset($routeInfo[2]) ? array_values($routeInfo[2]) : [];
         try {
             return $controller->$method(...$params);
         } catch (\Exception $e) {
-            return Response::error(Code::CODE_UNAUTHORIZED, $e->getMessage());
+            return Response::error(StatusCode::CODE_UNAUTHORIZED, $e->getMessage());
         }
+        // $actionArr = isset($routeInfo[1]) ? $routeInfo[1] : [];
+        // if (empty($actionArr)) {
+        //     throw new \Exception('routers is error, please check it');
+        // }
+
+        // if (isset($actionArr['middleware']) && !empty($actionArr['middleware'])) {
+        //     $middlewareResult = \App\Http\Middleware\Kernel::getInstance()->validate($actionArr['middleware']);
+        //     if (!$middlewareResult) {
+        //         return Response::error(StatusCode::CODE_UNAUTHORIZED);
+        //     }
+        // }
+
+        // if (is_callable($actionArr['action'])) {
+        //     return call_user_func($actionArr['action']);
+        // }
+        // if (is_string($actionArr['action'])) {
+        //     $tempAction       = explode('@', $actionArr['action']);
+        //     self::$controller = isset($tempAction[0]) ? strval($tempAction[0]) : '';
+        //     self::$method     = isset($tempAction[1]) ? strval($tempAction[1]) : 'index';
+        //     self::$namespace  = isset($actionArr['namespace']) ? $actionArr['namespace'] : '';
+        // }
+
+        // // 依赖注入等解析
+        // $diContainer             = Container::getInstance();
+        // $diContainer->controller = self::$namespace . '\\' . self::$controller;
+        // $controller              = $diContainer->controller;
+        // $method                  = self::$method;
+        // $params                  = isset($routeInfo[2]) ? array_values($routeInfo[2]) : [];
+        // try {
+        //     return $controller->$method(...$params);
+        // } catch (\Exception $e) {
+        //     return Response::error(StatusCode::CODE_UNAUTHORIZED, $e->getMessage());
+        // }
     }
 
     public function getDispatcher()

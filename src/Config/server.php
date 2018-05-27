@@ -1,8 +1,8 @@
-<?php 
+<?php
 return [
-	'server_type'        => 'swoole_http_server',
-    'swoole_callback_client'      => '\App\Http\Client',
-    'swoole_http_server' => [
+    'server_type'             => 'swoole_http_server',
+    'swoole_callback_client'  => '\App\Http\Client',
+    'swoole_http_server'      => [
         'host'                     => '0.0.0.0',
         'port'                     => '9501',
         'worker_num'               => 2,
@@ -17,5 +17,5 @@ return [
         // 连接最大的空闲时间
         'heartbeat_idle_time'      => 300,
     ],
-    'swoole_websocket_server' => []
+    'swoole_websocket_server' => [],
 ];

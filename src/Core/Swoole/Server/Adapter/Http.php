@@ -1,9 +1,9 @@
 <?php
 namespace Ububs\Core\Swoole\Server\Adapter;
 
-use Ububs\Core\Http\Request\Request;
-use Ububs\Core\Http\Response\Response;
-use Ububs\Core\Http\Route\Route;
+use Ububs\Core\Http\Interaction\Request;
+use Ububs\Core\Http\Interaction\Response;
+use Ububs\Core\Http\Interaction\Route;
 use Ububs\Core\Swoole\Factory;
 use Ububs\Core\Tool\Config;
 

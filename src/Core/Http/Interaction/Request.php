@@ -1,5 +1,7 @@
 <?php
-namespace Ububs\Core\Http\Request;
+namespace Ububs\Core\Http\Interaction;
+
+use Ububs\Core\Http\Interaction\Route;
 
 class Request
 {
@@ -145,5 +147,20 @@ class Request
                 break;
         }
         return $result;
+    }
+
+    public function getActionController()
+    {
+        return Route::$actionController;
+    }
+
+    public function getActionMethod()
+    {
+        return Route::$actionMethod;
+    }
+
+    public function getActionNamespace()
+    {
+        return Route::$actionNamespace;
     }
 }

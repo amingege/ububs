@@ -1,10 +1,9 @@
 <?php
-namespace Ububs\Core\Http\Response;
+namespace Ububs\Core\Http\Interaction;
 
-use FwSwoole\Core\Code;
-use Ububs\Core\Http\Factory;
+use Ububs\Core\Tool\StatusCode\StatusCode;
 
-class Response extends Factory
+class Response
 {
 
     const CODE_REDIRECT = 302;
@@ -86,11 +85,11 @@ class Response extends Factory
     public static function error($code, string $message = '')
     {
         if ($message === '') {
-            $message = Code::getCodeMessage($code);
+            $message = StatusCode::getCodeMessage($code);
         }
         return self::json([
             'code'    => $code,
-            'status'  => ERROR_STATUS,
+            'status'  => 0,
             'message' => $message,
         ]);
     }

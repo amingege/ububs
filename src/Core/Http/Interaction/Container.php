@@ -1,5 +1,5 @@
 <?php
-namespace FwSwoole\Core;
+namespace Ububs\Core\Http\Interaction;
 
 class Container
 {
@@ -102,43 +102,5 @@ class Container
             return $parameter->getDefaultValue();
         }
         throw new Exception('I have no idea what to do here.');
-    }
-
-    public function parseRules($routeInfo, $request, $response)
-    {
-        switch ($routeInfo[0]) {
-            case FastRoute\Dispatcher::NOT_FOUND:
-                // ... 404 Not Found
-                break;
-            case FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
-                $allowedMethods = $routeInfo[1];
-                // ... 405 Method Not Allowed
-                break;
-            case FastRoute\Dispatcher::FOUND:
-                $handler = isset($routeInfo[1]) ? $routeInfo[1] : '';
-                $params  = isset($routeInfo[2]) ? $routeInfo[2] : '';
-                // 只有控制器，默认调用index方法
-                if (strpos($handler, '@') == -1) {
-
-                }
-                $action_arr     = explode('@', $handler);
-                $controllerName = isset($action_arr[0]) ? $action_arr[0] : '';
-                $actionName     = isset($action_arr[1]) ? $action_arr[1] : '';
-                if (!$controllerName || !$actionName) {
-                    echo '错误';
-                    exit;
-                }
-                $this->controller = 'App\Http\\' . $controllerName;
-                $controller       = $this->controller;
-                $params_arr       = array_values($params);
-                $param            = isset($params_arr[0]) ? $params_arr[0] : '';
-                if ($param !== '') {
-                    $controller->$actionName($request, $response);
-                } else {
-                    $controller->$actionName($request, $response);
-                }
-
-                break;
-        }
     }
 }
