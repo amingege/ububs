@@ -2,6 +2,7 @@
 use Ububs\Core\Tool\Config\Config;
 use Ububs\Core\Http\Interaction\Response;
 use Ububs\Core\Swoole\Server\ServerManager;
+use Ububs\Core\Tool\StatusCode\StatusCode;
 
 /**
  * 获取config配置
@@ -24,7 +25,16 @@ function write_response($data)
 	return Response::write($data);
 }
 
+/**
+ * 获取server对象
+ * @return object swoole_server
+ */
 function getServ()
 {
 	return ServerManager::getServer();
+}
+
+function errorMessage($message)
+{
+	return Response::error(500, $message);
 }
