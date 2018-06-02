@@ -1,59 +1,77 @@
 <?php
-namespace FwSwoole\Component\Auth;
+namespace Ububs\Core\Component\Auth;
 
-use Ububs\Core\Component\Factory;
 use FwSwoole\Core\Request;
 use FwSwoole\Core\Tool\Config;
 use FwSwoole\Log\Log;
-use FwSwoole\Middleware\Adapter\JWTAuth;
+use Ububs\Core\Component\Db\Db;
+use Ububs\Core\Component\Factory;
+use Ububs\Core\Component\Middleware\Adapter\JWTAuth;
 
 class Auth extends Factory
 {
-    private static $type        = '';
-    private static $authConfigs = [];
-    private static $class       = '';
-    private $userPrimaryValue   = '';
-
+    private static $table = null;
+    private static $time  = null;
     /**
-     * 容器注入
-     * @param  string $type config.auth配置
+     * 指定登录表
+     * @param  string $table 表名
      * @return object
      */
-    public static function guard($type = 'web')
+    public static function guard($table = 'user')
     {
-        $config = Config::get('auth.guards');
-        if (!isset($config[$type])) {
-            throw new \Exception("Error not exists auth.{$type}");
+        // 阻塞
+        if (self::$table === null || self::$time === null || self::$time < time() - 2) {
+            self::$table = $table;
+            self::$time  = time();
+            return self::getInstance();
         }
-        self::$type        = $type;
-        self::$authConfigs = $config[$type];
-        self::$class       = self::$authConfigs['provider'];
-        return self::getInstance();
     }
 
     /**
-     * 登录
+     * 验证登录信息
      * @param  array  $loginData 登录数据
      * @param  boolean $remember  是否记住密码
      * @return array
      */
     public function attempt(array $loginData, $remember)
     {
+        $result = [];
         if (count($loginData) !== 2) {
-            return false;
+            self::$table = null;
+            self::$time  = null;
+            return $result;
         }
-        $usernameField  = self::$authConfigs['username'] ?? 'username';
-        $passwordField  = self::$authConfigs['password'] ?? 'password';
-        $whereParams = [
-            $usernameField => $loginData[$usernameField],
-            $passwordField => generatePassword($loginData[$passwordField]),
+        $configs  = isset(config('auth.guards')[self::$table]) ? config('auth.guards')[self::$table] : [];
+        $account  = $configs['account'] ?? 'account';
+        $password = $configs['password'] ?? 'password';
+        if (!isset($loginData[$account]) || !isset($loginData[$password])) {
+            self::$table = null;
+            self::$time  = null;
+            return $result;
+        }
+        $wheres = [
+            $account  => $loginData[$account],
+            $password => generatePassword($loginData[$password]),
         ];
-        $result['list'] = self::$class::getDB()->where($whereParams)->first();
-        if (empty($result['list'])) {
-            return false;
+        $list       = Db::table(self::$table)->where($wheres)->first();
+        if (empty($list)) {
+            self::$table = null;
+            self::$time  = null;
+            return $result;
+        }
+        $tableData  = Db::query('describe ' . self::$table);
+        $primaryKey = 'id';
+        foreach ($tableData as $fieldData) {
+            if ($fieldData['Key'] == 'PRI') {
+                $primaryKey = $fieldData['Field'];
+                break;
+            }
         }
         // 生成一个token
-        $result['__TOKEN__'] = JWTAuth::getInstance()->createToken($result['list'][self::$class::primaryKey()]);
+        $result['__UBUBS_TOKEN__'] = JWTAuth::getInstance()->createToken($list[$primaryKey]);
+        $result['list']            = $list;
+        self::$table               = null;
+        self::$time                = null;
         return $result;
     }
 

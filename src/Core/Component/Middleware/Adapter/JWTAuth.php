@@ -1,8 +1,7 @@
 <?php
-namespace FwSwoole\Middleware\Adapter;
+namespace Ububs\Core\Component\Middleware\Adapter;
 
-use FwSwoole\Core\Tool\Config;
-use FwSwoole\Middleware\Kernel;
+use Ububs\Core\Component\Middleware\Kernel;
 
 class JWTAuth extends Kernel
 {
@@ -29,14 +28,14 @@ class JWTAuth extends Kernel
      * ];
      */
 
-    private $token       = '';
-    private $tokenHeader = 'Bearer ';
+    private $token   = '';
+    const TOKEN_MARK = 'Bearer ';
 
     /**
      * 创建 token
      * @return string
      */
-    public function createToken($primaryValue)
+    public function createToken($id)
     {
         $header = [
             "typ" => "JWT",
@@ -44,7 +43,7 @@ class JWTAuth extends Kernel
         ];
         $jwtHeader  = base64_encode(json_encode($header));
         $createTime = time();
-        $expireTime = intval($createTime + Config::get('app.token_expire_time', '10800'));
+        $expireTime = intval($createTime + config('app.token_expire_time', '10800'));
         $payload    = [
             // "iss"   => "http://example.org", #非必须。issuer 请求实体，可以是发起请求的用户的信息，也可是jwt的签发者。
             "iat" => $createTime, #非必须。issued at。 token创建时间，unix时间戳格式
@@ -53,11 +52,11 @@ class JWTAuth extends Kernel
             // "sub"   => "ububs@example.com", #非必须。该JWT所面向的用户
             // "nbf"   => 1357000000, # 非必须。not before。如果当前时间在nbf里的时间之前，则Token不被接受；一般都会留一些余地，比如几分钟。
             // "jti"   => '222we', # 非必须。JWT ID。针对当前token的唯一标识
-            "id"  => $primaryValue, # 自定义字段
+            "id"  => $id, # 自定义字段
         ];
         $jwtPayload   = base64_encode(json_encode($payload));
-        $jwtSignature = $this->createSignature($header['alg'], $jwtHeader . $jwtPayload, ENCRYPT_KEY);
-        return $this->tokenHeader . $jwtHeader . '.' . $jwtPayload . '.' . $jwtSignature;
+        $jwtSignature = $this->createSignature($header['alg'], $jwtHeader . $jwtPayload, config('app.encrypt_key'));
+        return self::TOKEN_MARK . $jwtHeader . '.' . $jwtPayload . '.' . $jwtSignature;
     }
 
     /**
@@ -67,10 +66,10 @@ class JWTAuth extends Kernel
      */
     public function attempt($token)
     {
-        if (strpos($token, $this->tokenHeader) !== 0) {
+        if (strpos($token, self::TOKEN_MARK) !== 0) {
             return false;
         }
-        $token    = mb_substr($token, mb_strlen($this->tokenHeader));
+        $token    = mb_substr($token, mb_strlen(self::TOKEN_MARK));
         $tokenArr = explode('.', $token);
         if (count($tokenArr) !== 3) {
             return false;
@@ -83,7 +82,7 @@ class JWTAuth extends Kernel
         }
 
         // 校验 signature
-        if ($this->createSignature($header['alg'], $jwtHeader . $jwtPayload, ENCRYPT_KEY) !== $jwtSignature) {
+        if ($this->createSignature($header['alg'], $jwtHeader . $jwtPayload, config('app.encrypt_key')) !== $jwtSignature) {
             return false;
         }
 

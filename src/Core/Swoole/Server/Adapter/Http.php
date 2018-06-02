@@ -116,15 +116,16 @@ class Http extends Factory
         // 解析路由
         switch ($routeInfo[0]) {
             case \FastRoute\Dispatcher::NOT_FOUND:
+
                 $result = json_encode([
-                    'status'  => ERROR_STATUS,
+                    'status'  => 0,
                     'message' => '404 NOT FOUND!',
                 ]);
                 break;
             case \FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
                 $allowedMethods = $routeInfo[1];
                 $result         = json_encode([
-                    'status'  => ERROR_STATUS,
+                    'status'  => 0,
                     'message' => "405 Method Not Allowed!",
                 ]);
                 break;

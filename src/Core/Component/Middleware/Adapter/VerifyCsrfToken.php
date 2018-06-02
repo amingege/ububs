@@ -1,5 +1,5 @@
 <?php
-namespace FwSwoole\Middleware\Adapter;
+namespace Ububs\Core\Component\Middleware\Adapter;
 
 use FwSwoole\Core\Request;
 use FwSwoole\Middleware\Kernel;

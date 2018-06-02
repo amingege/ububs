@@ -1,5 +1,5 @@
 <?php
-namespace FwSwoole\Middleware;
+namespace Ububs\Core\Component\Middleware;
 
 use Ububs\Core\Component\Factory;
 

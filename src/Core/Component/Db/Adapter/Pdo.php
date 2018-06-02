@@ -93,8 +93,10 @@ class Pdo extends Factory
             return self::getInstance();
         }
         // 数组
-        if (count($params) === 1 && count($params[0]) === 1) {
-            $this->wheres['='][] = [array_keys($params[0])[0], array_values($params[0])[0]];
+        if (count($params) === 1) {
+            foreach ($params[0] as $field => $value) {
+                $this->wheres['='][] = [$field, $value];
+            }
         }
         // 两个字符串
         if (count($params) === 2) {
