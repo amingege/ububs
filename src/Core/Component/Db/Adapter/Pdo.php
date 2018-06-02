@@ -12,6 +12,8 @@ class Pdo extends Factory
     private $selects = '*';
     private $updates = [];
     private $wheres  = [];
+    private $limit   = [];
+    private $orders  = [];
 
     const COUNT_COMMAND  = 'COUNT';
     const SELECT_COMMAND = 'SELECT';
@@ -76,6 +78,21 @@ class Pdo extends Factory
         $this->selects = '*';
         $this->updates = [];
         $this->wheres  = [];
+        $this->limit   = [];
+        $this->orders  = [];
+    }
+
+    /**
+     * 选择那些字段
+     * @param  array $params 字段
+     * @return object         DB对象
+     */
+    public function selects($params)
+    {
+        if (is_array($params) && !empty($params)) {
+            $this->selects = implode(',', $params);
+        }
+        return self::getInstance();
     }
 
     /**
@@ -154,6 +171,24 @@ class Pdo extends Factory
     public function whereNotBetween(string $field, $params)
     {
         $this->wheres['not between'][] = [$field, $params];
+        return self::getInstance();
+    }
+
+    public function orderBy($field, $sort)
+    {
+        $this->orders[$field] = $sort;
+        return self::getInstance();
+    }
+
+    /**
+     * limit
+     * @param  int $start 数值1
+     * @param  int $limit 数值2
+     * @return object       DB对象
+     */
+    public function limit(int $start, int $limit = null)
+    {
+        $this->limit = [$start, $limit];
         return self::getInstance();
     }
 
@@ -339,6 +374,30 @@ class Pdo extends Factory
     }
 
     /**
+     * leftjoin 联表查询
+     * @param  string $table       表名
+     * @param  callback $func      回调函数
+     * @return object
+     */
+    public function leftJoin($table, $func)
+    {
+
+        \call_user_func($func, self::getInstance());
+        return self::getInstance();
+    }
+
+    /**
+     * on 查询，配合join和leftjoin
+     * @param  array $params 查询条件
+     * @return object
+     */
+    public function on($av, $bv)
+    {
+
+        return self::getInstance();
+    }
+
+    /**
      * 解析sql语句
      * @param  string $type 增删改查类型
      * @return array
@@ -385,8 +444,10 @@ class Pdo extends Factory
         // 解析 where 条件
         if ($type !== self::INSERT_COMMAND) {
             $flag = $type === self::COUNT_COMMAND ? false : true;
-            return $this->parseWhere($sql, $queryData, $flag);
+            $this->parseWhere($sql, $queryData, $flag);
         }
+        $this->parseOrder($sql);
+        $this->parseLimit($sql);
         return [$sql, $queryData];
     }
 
@@ -397,10 +458,10 @@ class Pdo extends Factory
      * @param  bool  $flag       是否启用预处理
      * @return array
      */
-    private function parseWhere($sql, $queryData, $flag = true)
+    private function parseWhere(&$sql, &$queryData, $flag = true)
     {
         if (empty($this->wheres)) {
-            return $sql;
+            return true;
         }
         $sql .= " WHERE ";
         $existAnd = false;
@@ -438,6 +499,40 @@ class Pdo extends Factory
                 }
             }
         }
-        return [$sql, $queryData];
+        return true;
+    }
+
+    /**
+     * 解析 order 条件
+     * @param  string $sql sql语句
+     * @return string
+     */
+    private function parseOrder(&$sql)
+    {
+        if (empty($this->orders)) {
+            return $sql;
+        }
+        foreach ($this->orders as $field => $sort) {
+            $sql .= " ORDER BY {$field} {$sort} ";
+        }
+        return $sql;
+    }
+
+    /**
+     * 解析 limit 条件
+     * @param  string $sql sql语句
+     * @return string
+     */
+    private function parseLimit(&$sql)
+    {
+        if (empty($this->limit)) {
+            return true;
+        }
+        list($start, $limit) = $this->limit;
+        $sql .= " LIMIT {$start}";
+        if ($limit !== null) {
+            $sql .= ", {$limit}";
+        }
+        return $sql;
     }
 }

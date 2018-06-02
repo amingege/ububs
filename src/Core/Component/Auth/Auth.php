@@ -1,9 +1,7 @@
 <?php
 namespace Ububs\Core\Component\Auth;
 
-use FwSwoole\Core\Request;
-use FwSwoole\Core\Tool\Config;
-use FwSwoole\Log\Log;
+use Ububs\Core\Http\Interaction\Request;
 use Ububs\Core\Component\Db\Db;
 use Ububs\Core\Component\Factory;
 use Ububs\Core\Component\Middleware\Adapter\JWTAuth;
@@ -12,6 +10,7 @@ class Auth extends Factory
 {
     private static $table = null;
     private static $time  = null;
+
     /**
      * 指定登录表
      * @param  string $table 表名
@@ -68,16 +67,11 @@ class Auth extends Factory
             }
         }
         // 生成一个token
-        $result['__UBUBS_TOKEN__'] = JWTAuth::getInstance()->createToken($list[$primaryKey]);
+        $result['__UBUBS_TOKEN__'] = JWTAuth::getInstance()->createToken($list[$primaryKey], self::$table);
         $result['list']            = $list;
         self::$table               = null;
         self::$time                = null;
         return $result;
-    }
-
-    public function validateAuth()
-    {
-        return JWTAuth::getInstance()->attempt(Request::getAuthorization());
     }
 
     /**
@@ -85,14 +79,9 @@ class Auth extends Factory
      * @param  string $token jwt
      * @return boolean
      */
-    public function check()
+    public static function check()
     {
-        $userPrimaryValue = $this->validateAuth();
-        if (!$userPrimaryValue) {
-            return false;
-        }
-        $this->userPrimaryValue = $userPrimaryValue;
-        return true;
+        return JWTAuth::getInstance()->attempt(Request::getAuthorization());
     }
 
     public function logout()
@@ -104,33 +93,17 @@ class Auth extends Factory
      * 获取当前登录的用户
      * @return array
      */
-    public function user()
+    public static function user()
     {
-        if (!$this->userPrimaryValue) {
-            $userPrimaryValue = $this->validateAuth();
-            if (!$userPrimaryValue) {
-                Log::info('no login');
-                return [];
-            }
-            $this->userPrimaryValue = $userPrimaryValue;
-        }
-        return self::$class::getDB()->find($this->userPrimaryValue);
+        return JWTAuth::getInstance()->user();
     }
 
     /**
      * 获取当前登录的主键
      * @return string
      */
-    public function id()
+    public static function id()
     {
-        if (!$this->userPrimaryValue) {
-            $userPrimaryValue = $this->validateAuth();
-            if (!$userPrimaryValue) {
-                Log::info('no login');
-                return [];
-            }
-            $this->userPrimaryValue = $userPrimaryValue;
-        }
-        return $this->userPrimaryValue;
+        return JWTAuth::getInstance()->id();
     }
 }

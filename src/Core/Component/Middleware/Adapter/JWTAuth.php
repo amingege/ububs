@@ -2,9 +2,14 @@
 namespace Ububs\Core\Component\Middleware\Adapter;
 
 use Ububs\Core\Component\Middleware\Kernel;
+use Ububs\Core\Http\Interaction\Request;
+use Ububs\Core\Component\Db\Db;
 
 class JWTAuth extends Kernel
 {
+
+    private $id = null;
+    private $table = null;
 
     /**
      * jwt 验证格式
@@ -35,7 +40,7 @@ class JWTAuth extends Kernel
      * 创建 token
      * @return string
      */
-    public function createToken($id)
+    public function createToken($id, $table)
     {
         $header = [
             "typ" => "JWT",
@@ -53,6 +58,7 @@ class JWTAuth extends Kernel
             // "nbf"   => 1357000000, # 非必须。not before。如果当前时间在nbf里的时间之前，则Token不被接受；一般都会留一些余地，比如几分钟。
             // "jti"   => '222we', # 非必须。JWT ID。针对当前token的唯一标识
             "id"  => $id, # 自定义字段
+            "table"  => $id, # 自定义字段
         ];
         $jwtPayload   = base64_encode(json_encode($payload));
         $jwtSignature = $this->createSignature($header['alg'], $jwtHeader . $jwtPayload, config('app.encrypt_key'));
@@ -97,8 +103,29 @@ class JWTAuth extends Kernel
         if (isset($payload['exp']) && $payload['exp'] < $time) {
             return false;
         }
+        $this->id = $payload['id'];
+        $this->table = $payload['table'];
+        return true;
+    }
 
-        return $payload['id'];
+    public function id()
+    {
+        if ($this->id === null) {
+            $this->attempt(Request::getAuthorization());
+        }
+        return $this->id;
+    }
+
+    public function user()
+    {
+        if ($this->id === null || $this->table === null) {
+            $this->attempt(Request::getAuthorization());
+        }
+        $result = [];
+        if ($this->id && $this->table) {
+            $result = Db::table($this->table)->find($this->id);
+        }
+        return $result;
     }
 
     /**
