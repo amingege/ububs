@@ -45,6 +45,14 @@ class Pdo extends Factory
         }
     }
 
+    public function resetConnect($msg, $callback)
+    {
+        if (strpos($msg, 'MySQL server has gone away') !== false) {
+            self::$db = null;
+            return call_user_func($callback, self::getInstance());
+        }
+    }
+
     /**
      * 获取数据库资源db对象
      * @return object
@@ -206,7 +214,14 @@ class Pdo extends Factory
         }
         $stmt = self::getDb()->prepare($sql);
         $stmt->setFetchMode(\PDO::FETCH_ASSOC);
-        $stmt->execute($queryData);
+
+        try {
+            $stmt->execute($queryData);
+        } catch (\PDOException $e) {
+            return $this->resetConnect($e->getMessage(), function ($instance) use ($sql, $queryData) {
+                return $instance->query($sql, $queryData);
+            });
+        }
         return $stmt->fetchAll();
     }
 
@@ -227,7 +242,13 @@ class Pdo extends Factory
         foreach ($data as $key => $item) {
             $queryData = array_merge($queryData, array_values($item));
         }
-        return $stmt->execute($queryData);
+        try {
+            return $stmt->execute($queryData);
+        } catch (\PDOException $e) {
+            return $this->resetConnect($e->getMessage(), function ($instance) use ($data) {
+                return $instance->insert($data);
+            });
+        }
     }
 
     /**
@@ -243,7 +264,13 @@ class Pdo extends Factory
         $fileds = implode(',', array_keys($data));
         $values = ':' . implode(',:', array_keys($data));
         $stmt   = self::getDb()->prepare("INSERT INTO {$this->table} ($fileds) VALUES ({$values})");
-        return $stmt->execute($data);
+        try {
+            return $stmt->execute($data);
+        } catch (\PDOException $e) {
+            return $this->resetConnect($e->getMessage(), function ($instance) use ($data) {
+                return $instance->create($data);
+            });
+        }
     }
 
     /**
@@ -256,7 +283,13 @@ class Pdo extends Factory
         $fileds = implode(',', array_keys($data));
         $values = ':' . implode(',:', array_keys($data));
         $stmt   = self::getDb()->prepare("INSERT INTO {$this->table} ($fileds) VALUES ({$values})");
-        $stmt->execute($data);
+        try {
+            $stmt->execute($data);
+        } catch (\PDOException $e) {
+            return $this->resetConnect($e->getMessage(), function ($instance) use ($data) {
+                return $instance->createGetId($data);
+            });
+        }
         return self::$db->lastInsertId();
     }
 
@@ -270,7 +303,13 @@ class Pdo extends Factory
         $this->updates         = $data;
         list($sql, $queryData) = $this->parseSql(self::UPDATE_COMMAND);
         $stmt                  = self::getDb()->prepare($sql);
-        return $stmt->execute($queryData);
+        try {
+            return $stmt->execute($queryData);
+        } catch (\PDOException $e) {
+            return $this->resetConnect($e->getMessage(), function ($instance) use ($data) {
+                return $instance->update($data);
+            });
+        }
     }
 
     /**
@@ -281,7 +320,13 @@ class Pdo extends Factory
     {
         list($sql, $queryData) = $this->parseSql(self::DELETE_COMMAND);
         $stmt                  = self::getDb()->prepare($sql);
-        return $stmt->execute($queryData);
+        try {
+            return $stmt->execute($queryData);
+        } catch (\PDOException $e) {
+            return $this->resetConnect($e->getMessage(), function ($instance) {
+                return $instance->delete();
+            });
+        }
     }
 
     /**
@@ -291,8 +336,33 @@ class Pdo extends Factory
     public function count()
     {
         list($sql) = $this->parseSql(self::COUNT_COMMAND);
-        $stmt      = self::getDb()->query($sql);
+        try {
+            $stmt = self::getDb()->query($sql);
+        } catch (\PDOException $e) {
+            return $this->resetConnect($e->getMessage(), function ($instance) {
+                return $instance->count();
+            });
+        }
         return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * 判断数据是否存在
+     * @return boolean
+     */
+    public function exist()
+    {
+        list($sql, $queryData) = $this->parseSql(self::SELECT_COMMAND);
+        $stmt                  = self::getDb()->prepare($sql);
+        try {
+            $stmt->execute($queryData);
+        } catch (\PDOException $e) {
+            return $this->resetConnect($e->getMessage(), function ($instance) {
+                return $instance->exist();
+            });
+        }
+        $stmt->setFetchMode(\PDO::FETCH_ASSOC);
+        return (bool) $stmt->fetch();
     }
 
     /**
@@ -305,7 +375,13 @@ class Pdo extends Factory
         $this->selects         = $field;
         list($sql, $queryData) = $this->parseSql(self::SELECT_COMMAND);
         $stmt                  = self::getDb()->prepare($sql);
-        $stmt->execute($queryData);
+        try {
+            $stmt->execute($queryData);
+        } catch (\PDOException $e) {
+            return $this->resetConnect($e->getMessage(), function ($instance) {
+                return $instance->value();
+            });
+        }
         return $stmt->fetchColumn();
     }
 
@@ -332,7 +408,13 @@ class Pdo extends Factory
         $this->where($searchParams);
         list($sql, $queryData) = $this->parseSql(self::SELECT_COMMAND);
         $stmt                  = self::getDb()->prepare($sql);
-        $stmt->execute($queryData);
+        try {
+            $stmt->execute($queryData);
+        } catch (\PDOException $e) {
+            return $this->resetConnect($e->getMessage(), function ($instance) use ($id) {
+                return $instance->find($id);
+            });
+        }
         $stmt->setFetchMode(\PDO::FETCH_ASSOC);
         return $stmt->fetch();
     }
@@ -345,7 +427,13 @@ class Pdo extends Factory
     {
         list($sql, $queryData) = $this->parseSql(self::SELECT_COMMAND);
         $stmt                  = self::getDb()->prepare($sql);
-        $stmt->execute($queryData);
+        try {
+            $stmt->execute($queryData);
+        } catch (\PDOException $e) {
+            return $this->resetConnect($e->getMessage(), function ($instance) {
+                return $instance->first();
+            });
+        }
         $stmt->setFetchMode(\PDO::FETCH_ASSOC);
         return $stmt->fetch();
     }
@@ -358,7 +446,13 @@ class Pdo extends Factory
     {
         list($sql, $queryData) = $this->parseSql(self::SELECT_COMMAND);
         $stmt                  = self::getDb()->prepare($sql);
-        $stmt->execute($queryData);
+        try {
+            $stmt->execute($queryData);
+        } catch (\PDOException $e) {
+            return $this->resetConnect($e->getMessage(), function ($instance) {
+                return $instance->get();
+            });
+        }
         $stmt->setFetchMode(\PDO::FETCH_ASSOC);
         return $stmt->fetchAll();
     }
