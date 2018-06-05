@@ -4,7 +4,6 @@ namespace Ububs\Core\Component\View;
 use Ububs\Core\Http\Interaction\Request;
 use Ububs\Core\Http\Interaction\Container;
 
-
 class View
 {
     private static $view      = '';

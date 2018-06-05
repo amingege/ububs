@@ -20,7 +20,7 @@ class Db extends Factory
      * 获取数据库资源对象
      * @return object dbInstance
      */
-    private static function getDbInstance()
+    public static function getDbInstance()
     {
         if (self::$dbInstance === null) {
             switch (strtoupper(config('database.type'))) {

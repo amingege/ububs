@@ -13,8 +13,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Ububs\\": "src",
-            "App\\"
+            "Ububs\\": "src"
         }
     }
 }

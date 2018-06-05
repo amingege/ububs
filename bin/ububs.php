@@ -44,6 +44,8 @@ use Ububs\Component\Command\Adapter\Server;
 use Ububs\Core\Http\Interaction\Route;
 use Ububs\Core\Swoole\Event\EventManager;
 use Ububs\Core\Swoole\Server\ServerManager;
+use Ububs\Core\Component\Db\Migrations\MigrationManager;
+use Ububs\Core\Component\Db\Seeds\SeedManager;
 use Ububs\Core\Tool\Config\Config;
 use Ububs\Core\Ububs;
 
@@ -69,7 +71,7 @@ class UbubsCommand
     ];
 
     private $serverCommand = ['start' => 'serverStart', 'restart', 'stop'];
-    private $dbCommand     = ['seed', 'migration'];
+    private $dbCommand     = ['seed' => 'dbSeed', 'migration' => 'dbMigration'];
 
     public function __construct()
     {
@@ -174,6 +176,17 @@ class UbubsCommand
     private function serverReload($params)
     {
         ServerManager::getInstance()->reload();
+    }
+
+    private function dbSeed($params)
+    {
+        SeedManager::getInstance()->run();
+    }
+
+    // 执行数据库迁移文件
+    private function dbMigration($params)
+    {
+        MigrationManager::getInstance()->run($params);
     }
 
     private function routerWebContent()

@@ -7,9 +7,9 @@
  * @param array $result 结果集引用
  * @return array
  */
-function dir_tree($dir, $filter = '', $deep = true)
+function dir_tree($dir, $filter = '', $deep = true, $result = [])
 {
-    static $result;
+    // static $result;
     $files = new \DirectoryIterator($dir);
     foreach ($files as $file) {
         if ($file->isDot()) {
@@ -17,7 +17,7 @@ function dir_tree($dir, $filter = '', $deep = true)
         }
         $filename = $file->getFilename();
         if ($file->isDir() && $deep) {
-            $result = dir_tree($dir . DS . $filename, $filter, $deep);
+            $result = dir_tree($dir . DS . $filename, $filter, $deep, $result);
         } else {
             if ($filter !== '' && !\preg_match($filter, $filename)) {
                 continue;
