@@ -119,8 +119,19 @@ class Pdo extends Factory
         }
         // 数组
         if (count($params) === 1) {
-            foreach ($params[0] as $field => $value) {
-                $this->wheres['='][] = [$field, $value];
+            foreach ($params[0] as $field => $item) {
+                if (!is_array($item)) {
+                    $this->wheres['='][] = [$field, $item];
+                    continue;
+                } else {
+                    if (count($item) !== 2) {
+                        continue;
+                    }
+                    // key => [condition, value]
+                    // key => [condition, []]
+                    list($condition, $vs) = $item;
+                    $this->wheres[$condition][] = [$field, $vs];
+                }
             }
         }
         // 两个字符串
