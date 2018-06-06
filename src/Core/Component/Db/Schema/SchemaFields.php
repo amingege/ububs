@@ -14,10 +14,19 @@ trait SchemaFields
         return self::getInstance();
     }
 
-    public function tinyInteger(string $field, int $length = 1)
+    public function tinyInteger(string $field, int $length = 4)
     {
         $this->fields[$field] = [
             'type' => self::TABLE_TINYINT,
+            'length' => $length,
+        ];
+        return self::getInstance();
+    }
+
+    public function smallInteger(string $field, int $length = 6)
+    {
+        $this->fields[$field] = [
+            'type' => self::TABLE_SMALLINTEGER,
             'length' => $length,
         ];
         return self::getInstance();
@@ -68,25 +77,25 @@ trait SchemaFields
 
     public function unsigned()
     {
-        $this->fields[key(end($this->fields))]['unsigned'] = true;
+        $this->fields[array_keys($this->fields)[count($this->fields) - 1]]['unsigned'] = true;
         return self::getInstance();
     }
 
     public function default($default)
     {
-        $this->fields[key(end($this->fields))]['default'] = $default;
+        $this->fields[array_keys($this->fields)[count($this->fields) - 1]]['default'] = $default;
         return self::getInstance();
     }
 
     public function nullable(bool $boolean = true)
     {
-        $this->fields[key(end($this->fields))]['nullable'] = $boolean;
+        $this->fields[array_keys($this->fields)[count($this->fields) - 1]]['nullable'] = $boolean;
         return self::getInstance();
     }
 
     public function comment($comment)
     {
-        $this->fields[key(end($this->fields))]['comment'] = $comment;
+        $this->fields[array_keys($this->fields)[count($this->fields) - 1]]['comment'] = $comment;
         return self::getInstance();
     }
 

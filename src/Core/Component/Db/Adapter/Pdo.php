@@ -50,6 +50,8 @@ class Pdo extends Factory
         if (strpos($msg, 'MySQL server has gone away') !== false) {
             self::$db = null;
             return call_user_func($callback, self::getInstance());
+        } else {
+            throw new \Exception($msg, 1);
         }
     }
 
@@ -78,7 +80,17 @@ class Pdo extends Factory
     }
 
     /**
-     * 常驻内存多进程下同一个绘画请求参数清空
+     * 清空表数据
+     * @return boolean
+     */
+    public function truncate()
+    {
+        $sql = "TRUNCATE TABLE " . $this->table;
+        return self::getDb()->exec($sql);
+    }
+
+    /**
+     * 常驻内存多进程下同一个会话请求参数清空
      * @return void
      */
     private function resetVar()

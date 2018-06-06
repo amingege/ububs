@@ -21,9 +21,11 @@ class MigrationManager extends Factory
                         $tName   = $rDIr . DS . basename($item, '.php');
                         $className   = '\Databases\\' . str_replace('/', '\\', $tName);
                         $tObj = new $className();
-                        if ($tObj instanceof Migration) {
-                        	$tObj->run();
+                        if (!$tObj instanceof Migration) {
+                        	throw new \Exception("Error Processing Request", 1);
+                            
                         }
+                        $tObj->run();
                     }, $fFiles);
                 }
             }

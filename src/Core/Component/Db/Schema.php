@@ -17,6 +17,7 @@ class Schema extends Factory
     const TABLE_CHAR = 'CHAR';
     const TABLE_TEXT = 'TEXT';
     const TABLE_TINYINT = 'TINYINT';
+    const TABLE_SMALLINTEGER = 'SMALLINT';
     const TABLE_BOOLEAN = 'BOOLEAN';
     const TABLE_DATE = 'DATE';
 
@@ -50,6 +51,9 @@ class Schema extends Factory
 
     public function setTable($table)
     {
+        $this->engine = '';
+        $this->type = '';
+        $this->fields = [];
         $this->table = $table;
     }
 
