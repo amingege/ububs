@@ -7,7 +7,7 @@ class Kernel extends Factory
 {
 
     // 路由中间件
-    protected $routeMiddleware = [];
+    public $routeMiddleware = [];
 
     // 中间件校验
     final public function validate($middlewares)

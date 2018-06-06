@@ -16,6 +16,31 @@ function config($key, $default = null)
 }
 
 /**
+ * 获取对象
+ * @param  string   需要实例化的对象
+ * @param  refresh  是否需要重新实例化
+ * @return object 
+ */ 
+function app($class, $refresh = false)
+{
+    static $appClass = [];
+    if ($refresh) {
+        if (!class_exists($class)) {
+            throw new \Exception("Error class is not exist", 1);
+        }
+        return new $class();
+    }
+    if (isset($appClass[$class])) {
+        return $appClass[$class];
+    }
+    if (!class_exists($class)) {
+        throw new \Exception("Error class is not exist", 1);
+    }
+    $appClass[$class] = new $class();
+    return $appClass[$class];
+}
+
+/**
  * 调试打印内容
  * @param  array | string | object $data 
  * @return value       
@@ -32,6 +57,11 @@ function write_response($data)
 function getServ()
 {
 	return ServerManager::getServer();
+}
+
+function redirect($route)
+{
+    return Response::redirect($route);
 }
 
 /**

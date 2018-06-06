@@ -18,12 +18,8 @@ class Auth extends Factory
      */
     public static function guard($table = 'user')
     {
-        // 阻塞
-        if (self::$table === null || self::$time === null || self::$time < time() - 2) {
-            self::$table = $table;
-            self::$time  = time();
-            return self::getInstance();
-        }
+        self::$table = $table;
+        return self::getInstance();
     }
 
     /**
@@ -79,7 +75,7 @@ class Auth extends Factory
      * @param  string $token jwt
      * @return boolean
      */
-    public static function check()
+    public function check()
     {
         return JWTAuth::getInstance()->attempt(Request::getAuthorization());
     }
@@ -93,7 +89,7 @@ class Auth extends Factory
      * 获取当前登录的用户
      * @return array
      */
-    public static function user()
+    public function user()
     {
         return JWTAuth::getInstance()->user();
     }
@@ -102,7 +98,7 @@ class Auth extends Factory
      * 获取当前登录的主键
      * @return string
      */
-    public static function id()
+    public function id()
     {
         return JWTAuth::getInstance()->id();
     }

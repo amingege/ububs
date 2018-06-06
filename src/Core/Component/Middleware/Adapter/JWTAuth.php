@@ -94,7 +94,6 @@ class JWTAuth extends Kernel
 
         // 解析payload
         $payload = json_decode(base64_decode($jwtPayload), true);
-
         // 校验过期时间
         $time = time();
         if (isset($payload['iat']) && $payload['iat'] > $time) {

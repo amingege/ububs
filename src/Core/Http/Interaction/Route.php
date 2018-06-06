@@ -32,8 +32,9 @@ class Route extends Factory
         if (empty($routers)) {
             throw new \Exception('routers is error, please check it');
         }
-        $middleware = isset($routers['middleware']) && !empty($routers['middleware']) ? $routers['middleware'] : '';
-        if ($middleware !== '' && !$mr = Middleware::validate($middleware)) {
+        // 中间件验证
+        $middleware = isset($routers['middleware']) ? $routers['middleware'] : [];
+        if (!$mr = Middleware::validate($middleware)) {
             return Response::error(StatusCode::CODE_UNAUTHORIZED);
         }
         $actions         = isset($routers['action']) ? $routers['action'] : '';
