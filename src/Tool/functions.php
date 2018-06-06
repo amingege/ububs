@@ -114,7 +114,7 @@ function webpackLoad($filePath)
         if ($file->isDot() || $file->isDir()) {
             continue;
         }
-        $pattern = '/^' . $fileArr[0] . '.*\.' . $fileArr[1] . '/';
+        $pattern = '/^' . $fileArr[0] . '.*\.' . $fileArr[1] . '$/';
         if (preg_match($pattern, $file->getFilename())) {
             if (!$lastModifyTime || $file->getCTime() > $lastModifyTime) {
                 $lastModifyTime = $file->getCTime();
