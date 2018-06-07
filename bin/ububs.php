@@ -180,7 +180,7 @@ class UbubsCommand
 
     private function dbSeed($params)
     {
-        SeedManager::getInstance()->run();
+        SeedManager::getInstance()->run($params);
     }
 
     // 执行数据库迁移文件

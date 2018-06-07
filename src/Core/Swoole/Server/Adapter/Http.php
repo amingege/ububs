@@ -153,9 +153,7 @@ class Http extends Factory
     public function onTask($serv, $task_id, $from_id, $data)
     {
         $type = is_array($data) && isset($data['__TASK_TYPE__']) && in_array($data['__TASK_TYPE__'], self::$taskType) ? $data['__TASK_TYPE__'] : '';
-        if ($type === '') {
-            self::$client->onTask($serv, $task_id, $from_id, $data);
-        } else {
+        if ($type !== '') {
             $result = '';
             $data   = json_decode($data['data'], true);
             switch (strtoupper($type)) {
@@ -169,6 +167,7 @@ class Http extends Factory
             }
             $serv->finish($result);
         }
+        return $data;
     }
 
     /**

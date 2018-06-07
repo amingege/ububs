@@ -232,7 +232,7 @@ class Pdo extends Factory
     public function query($sql, $queryData = [])
     {
         if (empty($queryData)) {
-            $stmt = self::getDb()->query($sql);
+            $stmt = self::getDb()->query($sql, \PDO::FETCH_ASSOC);
             return $stmt->fetchAll();
         }
         $stmt = self::getDb()->prepare($sql);
