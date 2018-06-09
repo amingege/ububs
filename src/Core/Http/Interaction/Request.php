@@ -72,6 +72,11 @@ class Request
         return self::$request->fd;
     }
 
+    public static function getRealIp()
+    {
+        return self::getHeader()['x-real-ip'];
+    }
+
     /**
      * 获取 get 请求参数
      * @param  string $key 键

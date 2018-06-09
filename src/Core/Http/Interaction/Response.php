@@ -76,6 +76,13 @@ class Response
         return true;
     }
 
+    public static function download($path, $filename)
+    {
+        self::$response->header('content-type', 'application/octet-stream');
+        self::$response->header('content-disposition', 'attachment;filename=' . $filename);
+        self::$response->sendfile($path);
+    }
+
     /**
      * 返回错误信息
      * @param  int $code    错误码

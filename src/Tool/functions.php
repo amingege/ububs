@@ -1,8 +1,8 @@
 <?php
-use Ububs\Core\Tool\Config\Config;
+use Ububs\Core\Http\Interaction\Request;
 use Ububs\Core\Http\Interaction\Response;
 use Ububs\Core\Swoole\Server\ServerManager;
-use Ububs\Core\Tool\StatusCode\StatusCode;
+use Ububs\Core\Tool\Config\Config;
 
 /**
  * 获取config配置
@@ -19,8 +19,8 @@ function config($key, $default = null)
  * 获取对象
  * @param  string   需要实例化的对象
  * @param  refresh  是否需要重新实例化
- * @return object 
- */ 
+ * @return object
+ */
 function app($class, $refresh = false)
 {
     static $appClass = [];
@@ -42,12 +42,12 @@ function app($class, $refresh = false)
 
 /**
  * 调试打印内容
- * @param  array | string | object $data 
- * @return value       
+ * @param  array | string | object $data
+ * @return value
  */
 function write_response($data)
 {
-	return Response::write($data);
+    return Response::write($data);
 }
 
 /**
@@ -56,7 +56,7 @@ function write_response($data)
  */
 function getServ()
 {
-	return ServerManager::getServer();
+    return ServerManager::getServer();
 }
 
 function redirect($route)
@@ -67,11 +67,11 @@ function redirect($route)
 /**
  * 返回错误信息
  * @param  string $message 错误内容
- * @return array          
+ * @return array
  */
 function errorMessage($message)
 {
-	return Response::error(500, $message);
+    return Response::error(500, $message);
 }
 
 /**
@@ -92,7 +92,6 @@ function generatePassword($password)
 {
     return sha1(md5($password, config('app.encrypt_key', 'http://www.ububs.com')));
 }
-
 
 /**
  * 入口php文件获取最新的文件
@@ -124,6 +123,11 @@ function webpackLoad($filePath)
         }
     }
     return '/public/' . dirname(str_replace('\\', '/', $filePath)) . '/' . $result;
+}
+
+function getRealIp()
+{
+    return Request::getRealIp();
 }
 
 /**

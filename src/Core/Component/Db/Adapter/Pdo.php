@@ -139,8 +139,6 @@ class Pdo extends Factory
                     if (count($item) !== 2) {
                         continue;
                     }
-                    // key => [condition, value]
-                    // key => [condition, []]
                     list($condition, $vs) = $item;
                     $this->wheres[$condition][] = [$field, $vs];
                 }

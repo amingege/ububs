@@ -83,7 +83,8 @@ class Schema extends Factory
 
     public function run()
     {
-        self::getDb()->exec($this->assembleSql());
+        $sql = $this->assembleSql();
+        self::getDb()->exec($sql);
     }
 
     private function assembleSql()
