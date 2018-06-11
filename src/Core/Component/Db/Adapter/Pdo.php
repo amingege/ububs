@@ -160,6 +160,17 @@ class Pdo extends Factory
     }
 
     /**
+     * whereNot 查询
+     * @param  array $params 查询条件
+     * @return object        DB对象
+     */
+    public function whereNot(string $field, string $value)
+    {
+        $this->wheres['!='][] = [$field, $value];
+        return self::getInstance();
+    }
+
+    /**
      * whereIn 查询
      * @param  array $params 查询条件
      * @return object        DB对象
