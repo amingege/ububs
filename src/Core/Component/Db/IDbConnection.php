@@ -4,7 +4,9 @@ namespace Ububs\Core\Component\Db;
 interface IDbConnection
 {
 
-	public function getDb();
+	public function getDbInstance();
+
+	public static function getDb();
 
     public function connect();
 

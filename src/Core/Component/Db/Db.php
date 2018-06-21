@@ -29,6 +29,7 @@ class Db extends Factory
                         throw new \Exception("no pdo extension. get: https://github.com/swoole/swoole-src");
                     }
                     self::$dbInstance = Pdo::getInstance();
+                    // self::$dbInstance = Mysqli::getInstance();
                     break;
 
                 case self::MYSQLI_SERVER:
@@ -54,7 +55,7 @@ class Db extends Factory
     public static function table($table)
     {
         if (!$table) {
-            return errorMessage('tableName can\'t be eempty');
+            return errorMessage('tableName can\'t be empty');
         }
         return self::getDbInstance()->table($table);
     }

@@ -1,7 +1,9 @@
 <?php
 namespace Ububs\Core\Component\Db;
 
-trait DbQuery
+use Ububs\Core\Component\Factory;
+
+class DbQuery extends Factory
 {
 
 	const COUNT_COMMAND  = 'COUNT';
@@ -10,13 +12,44 @@ trait DbQuery
     const DELETE_COMMAND = 'DELETE';
     const INSERT_COMMAND = 'INSERT';
 
-	public $table   = null;
-    public $selects = '*';
-    public $updates = [];
-    public $wheres  = [];
-    public $limit   = [];
-    public $orders  = [];
+    protected static $db = null;
 
+	protected $table   = null;
+    protected $selects = '*';
+    protected $updates = [];
+    protected $wheres  = [];
+    protected $limit   = [];
+    protected $orders  = [];
+
+
+    public function table($table)
+    {
+        $this->table = $table;
+        return $this->getDbInstance();
+    }
+
+    /**
+     * 选择那些字段
+     * @param  array $params 字段
+     * @return object         DB对象
+     */
+    public function selects($params)
+    {
+        if (is_array($params) && !empty($params)) {
+            $this->selects = implode(',', $params);
+        }
+        return self::getInstance();
+    }
+
+    /**
+     * where 条件查询
+     * 参数说明：
+     *     1、数组，key => value，表示相等
+     *     2、两个字符串， key = value，表示相等
+     *     3、三个字符串，key, condition, value，中间参数为条件
+     * @param  [type] $params 查询条件
+     * @return object         dbInstance
+     */
 	public function where(...$params)
     {
         if (empty($params)) {
@@ -252,134 +285,6 @@ trait DbQuery
                 return $instance->delete();
             });
         }
-    }
-
-    /**
-     * 获取总数
-     * @return int
-     */
-    public function count()
-    {
-        list($sql) = $this->parseSql(self::COUNT_COMMAND);
-        try {
-            $stmt = self::getDb()->query($sql);
-        } catch (\PDOException $e) {
-            return $this->resetConnect($e->getMessage(), function ($instance) {
-                return $instance->count();
-            });
-        }
-        return (int) $stmt->fetchColumn();
-    }
-
-    /**
-     * 判断数据是否存在
-     * @return boolean
-     */
-    public function exist()
-    {
-        list($sql, $queryData) = $this->parseSql(self::SELECT_COMMAND);
-        $stmt                  = self::getDb()->prepare($sql);
-        try {
-            $stmt->execute($queryData);
-        } catch (\PDOException $e) {
-            return $this->resetConnect($e->getMessage(), function ($instance) {
-                return $instance->exist();
-            });
-        }
-        $stmt->setFetchMode(\PDO::FETCH_ASSOC);
-        return (bool) $stmt->fetch();
-    }
-
-    /**
-     * 获取value值
-     * @param  string $field 字段
-     * @return string
-     */
-    public function value(string $field)
-    {
-        $this->selects         = $field;
-        list($sql, $queryData) = $this->parseSql(self::SELECT_COMMAND);
-        $stmt                  = self::getDb()->prepare($sql);
-        try {
-            $stmt->execute($queryData);
-        } catch (\PDOException $e) {
-            return $this->resetConnect($e->getMessage(), function ($instance) {
-                return $instance->value();
-            });
-        }
-        return $stmt->fetchColumn();
-    }
-
-    /**
-     * 根据主键获取某一条数据
-     * @param  int $id 主键value
-     * @return array
-     */
-    public function find($id)
-    {
-        // 获取表详情，获取主键
-        $tableData    = self::getDb()->query('describe ' . $this->table);
-        $searchParams = [
-            'id' => $id,
-        ];
-        foreach ($tableData as $fieldData) {
-            if ($fieldData['Key'] == 'PRI') {
-                $searchParams = [
-                    $fieldData['Field'] => $id,
-                ];
-                break;
-            }
-        }
-        $this->where($searchParams);
-        list($sql, $queryData) = $this->parseSql(self::SELECT_COMMAND);
-        $stmt                  = self::getDb()->prepare($sql);
-        try {
-            $stmt->execute($queryData);
-        } catch (\PDOException $e) {
-            return $this->resetConnect($e->getMessage(), function ($instance) use ($id) {
-                return $instance->find($id);
-            });
-        }
-        $stmt->setFetchMode(\PDO::FETCH_ASSOC);
-        return $stmt->fetch();
-    }
-
-    /**
-     * 获取一条数据
-     * @return array
-     */
-    public function first()
-    {
-        list($sql, $queryData) = $this->parseSql(self::SELECT_COMMAND);
-        $stmt                  = self::getDb()->prepare($sql);
-        try {
-            $stmt->execute($queryData);
-        } catch (\PDOException $e) {
-            return $this->resetConnect($e->getMessage(), function ($instance) {
-                return $instance->first();
-            });
-        }
-        $stmt->setFetchMode(\PDO::FETCH_ASSOC);
-        return $stmt->fetch();
-    }
-
-    /**
-     * 获取列表数据
-     * @return array
-     */
-    public function get()
-    {
-        list($sql, $queryData) = $this->parseSql(self::SELECT_COMMAND);
-        $stmt                  = self::getDb()->prepare($sql);
-        try {
-            $stmt->execute($queryData);
-        } catch (\PDOException $e) {
-            return $this->resetConnect($e->getMessage(), function ($instance) {
-                return $instance->get();
-            });
-        }
-        $stmt->setFetchMode(\PDO::FETCH_ASSOC);
-        return $stmt->fetchAll();
     }
 
     /**
