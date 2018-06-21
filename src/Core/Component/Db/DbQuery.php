@@ -1,130 +1,23 @@
 <?php
-namespace Ububs\Core\Component\Db\Adapter;
+namespace Ububs\Core\Component\Db;
 
-use Ububs\Core\Component\Factory;
-
-class Pdo extends Factory
+trait DbQuery
 {
 
-    private static $db = null;
-
-    private $table   = null;
-    private $selects = '*';
-    private $updates = [];
-    private $wheres  = [];
-    private $limit   = [];
-    private $orders  = [];
-
-    const COUNT_COMMAND  = 'COUNT';
+	const COUNT_COMMAND  = 'COUNT';
     const SELECT_COMMAND = 'SELECT';
     const UPDATE_COMMAND = 'UPDATE';
     const DELETE_COMMAND = 'DELETE';
     const INSERT_COMMAND = 'INSERT';
 
-    private static $conditions = ['=', 'like', '<', '>', '<=', '>=', '!=', '<>', 'in', 'not in', 'between', 'not between'];
+	public $table   = null;
+    public $selects = '*';
+    public $updates = [];
+    public $wheres  = [];
+    public $limit   = [];
+    public $orders  = [];
 
-    /**
-     * 连接数据库
-     * @return objcet
-     */
-    public function connect()
-    {
-        $config = config('database');
-        try {
-            self::$db = new \PDO(
-                "mysql:host=" . $config['host'] . ";port=" . $config['port'] . ";dbname=" . $config['databaseName'] . "",
-                $config['user'],
-                $config['password'], array(
-                    \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES '" . $config['charset'] . "';",
-                    \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
-                    \PDO::ATTR_PERSISTENT         => true,
-                ));
-            return self::$db;
-        } catch (PDOException $e) {
-            throw new \Exception($e->getMessage());
-        }
-    }
-
-    public function resetConnect($msg, $callback)
-    {
-        if (strpos($msg, 'MySQL server has gone away') !== false) {
-            self::$db = null;
-            return call_user_func($callback, self::getInstance());
-        } else {
-            throw new \Exception($msg, 1);
-        }
-    }
-
-    /**
-     * 获取数据库资源db对象
-     * @return object
-     */
-    public function getDb()
-    {
-        if (self::$db === null) {
-            $this->connect();
-        }
-        return self::$db;
-    }
-
-    /**
-     * 指定 table
-     * @param  string $table 表名
-     * @return object        dbInstance
-     */
-    public function table($table)
-    {
-        $this->resetVar();
-        $this->table = $table;
-        return self::getInstance();
-    }
-
-    /**
-     * 清空表数据
-     * @return boolean
-     */
-    public function truncate()
-    {
-        $sql = "TRUNCATE TABLE " . $this->table;
-        return self::getDb()->exec($sql);
-    }
-
-    /**
-     * 常驻内存多进程下同一个会话请求参数清空
-     * @return void
-     */
-    private function resetVar()
-    {
-        $this->selects = '*';
-        $this->updates = [];
-        $this->wheres  = [];
-        $this->limit   = [];
-        $this->orders  = [];
-    }
-
-    /**
-     * 选择那些字段
-     * @param  array $params 字段
-     * @return object         DB对象
-     */
-    public function selects($params)
-    {
-        if (is_array($params) && !empty($params)) {
-            $this->selects = implode(',', $params);
-        }
-        return self::getInstance();
-    }
-
-    /**
-     * where 条件查询
-     * 参数说明：
-     *     1、数组，key => value，表示相等
-     *     2、两个字符串， key = value，表示相等
-     *     3、三个字符串，key, condition, value，中间参数为条件
-     * @param  [type] $params 查询条件
-     * @return object         dbInstance
-     */
-    public function where(...$params)
+	public function where(...$params)
     {
         if (empty($params)) {
             return self::getInstance();
