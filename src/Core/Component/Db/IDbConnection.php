@@ -6,17 +6,11 @@ interface IDbConnection
 
 	public function getDbInstance();
 
-	public static function getDb();
-
     public function connect();
 
     public function destory();
 
-    public function execute(array $params = []);
-
     public function beginTransaction();
-
-    public function getSql();
 
     public function commit();
 

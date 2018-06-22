@@ -6,7 +6,7 @@ use Ububs\Core\Component\Factory;
 class DbQuery extends Factory
 {
 
-	const COUNT_COMMAND  = 'COUNT';
+    const COUNT_COMMAND  = 'COUNT';
     const SELECT_COMMAND = 'SELECT';
     const UPDATE_COMMAND = 'UPDATE';
     const DELETE_COMMAND = 'DELETE';
@@ -14,18 +14,46 @@ class DbQuery extends Factory
 
     protected static $db = null;
 
-	protected $table   = null;
+    protected $table   = null;
     protected $selects = '*';
     protected $updates = [];
     protected $wheres  = [];
     protected $limit   = [];
     protected $orders  = [];
 
+    protected static $conditions = ['=', 'like', '<', '>', '<=', '>=', '!=', '<>', 'in', 'not in', 'between', 'not between'];
+
+    public function getDb()
+    {
+        if (self::$db === null) {
+            $this->connect();
+        }
+        return self::$db;
+    }
+
+    public function getSql()
+    {
+
+    }
 
     public function table($table)
     {
         $this->table = $table;
+        $this->resetVar();
         return $this->getDbInstance();
+    }
+
+    /**
+     * 常驻内存多进程下同一个会话请求参数清空
+     * @return void
+     */
+    private function resetVar()
+    {
+        $this->selects = '*';
+        $this->updates = [];
+        $this->wheres  = [];
+        $this->limit   = [];
+        $this->orders  = [];
     }
 
     /**
@@ -50,7 +78,7 @@ class DbQuery extends Factory
      * @param  [type] $params 查询条件
      * @return object         dbInstance
      */
-	public function where(...$params)
+    public function where(...$params)
     {
         if (empty($params)) {
             return self::getInstance();
@@ -159,135 +187,6 @@ class DbQuery extends Factory
     }
 
     /**
-     * 执行原生sql
-     * @param  string $sql       sql
-     * @param  array  $queryData 查询条件
-     * @return array
-     */
-    public function query($sql, $queryData = [])
-    {
-        if (empty($queryData)) {
-            $stmt = self::getDb()->query($sql, \PDO::FETCH_ASSOC);
-            return $stmt->fetchAll();
-        }
-        $stmt = self::getDb()->prepare($sql);
-        $stmt->setFetchMode(\PDO::FETCH_ASSOC);
-
-        try {
-            $stmt->execute($queryData);
-        } catch (\PDOException $e) {
-            return $this->resetConnect($e->getMessage(), function ($instance) use ($sql, $queryData) {
-                return $instance->query($sql, $queryData);
-            });
-        }
-        return $stmt->fetchAll();
-    }
-
-    /**
-     * 插入多条数据
-     * @param  array $data
-     * @return bool
-     */
-    public function insert($data)
-    {
-        if (empty($data)) {
-            throw new \Exception("Error Processing Request", 1);
-        }
-        $fileds       = implode(',', array_keys($data[0]));
-        $insertValues = trim(str_repeat("(" . trim(str_repeat('?,', count($data[0])), ',') . "),", count($data)), ',');
-        $stmt         = self::getDB()->prepare("INSERT INTO {$this->table} ($fileds) VALUES {$insertValues}");
-        $queryData    = [];
-        foreach ($data as $key => $item) {
-            $queryData = array_merge($queryData, array_values($item));
-        }
-        try {
-            return $stmt->execute($queryData);
-        } catch (\PDOException $e) {
-            return $this->resetConnect($e->getMessage(), function ($instance) use ($data) {
-                return $instance->insert($data);
-            });
-        }
-    }
-
-    /**
-     * 新增一条数据
-     * @param  array $data
-     * @return bool       是否新增成功
-     */
-    public function create($data)
-    {
-        if (empty($data)) {
-            throw new \Exception("Error Processing Request", 1);
-        }
-        $fileds = implode(',', array_keys($data));
-        $values = ':' . implode(',:', array_keys($data));
-        $stmt   = self::getDb()->prepare("INSERT INTO {$this->table} ($fileds) VALUES ({$values})");
-        try {
-            return $stmt->execute($data);
-        } catch (\PDOException $e) {
-            return $this->resetConnect($e->getMessage(), function ($instance) use ($data) {
-                return $instance->create($data);
-            });
-        }
-    }
-
-    /**
-     * 新增一条数据，返回插入的自增主键
-     * @param  array $data
-     * @return int
-     */
-    public function createGetId($data)
-    {
-        $fileds = implode(',', array_keys($data));
-        $values = ':' . implode(',:', array_keys($data));
-        $stmt   = self::getDb()->prepare("INSERT INTO {$this->table} ($fileds) VALUES ({$values})");
-        try {
-            $stmt->execute($data);
-        } catch (\PDOException $e) {
-            return $this->resetConnect($e->getMessage(), function ($instance) use ($data) {
-                return $instance->createGetId($data);
-            });
-        }
-        return self::$db->lastInsertId();
-    }
-
-    /**
-     * 更新
-     * @param  array  更新数据
-     * @return bool   是否更新成功
-     */
-    public function update($data)
-    {
-        $this->updates         = $data;
-        list($sql, $queryData) = $this->parseSql(self::UPDATE_COMMAND);
-        $stmt                  = self::getDb()->prepare($sql);
-        try {
-            return $stmt->execute($queryData);
-        } catch (\PDOException $e) {
-            return $this->resetConnect($e->getMessage(), function ($instance) use ($data) {
-                return $instance->update($data);
-            });
-        }
-    }
-
-    /**
-     * 删除
-     * @return bool 是否删除成功
-     */
-    public function delete()
-    {
-        list($sql, $queryData) = $this->parseSql(self::DELETE_COMMAND);
-        $stmt                  = self::getDb()->prepare($sql);
-        try {
-            return $stmt->execute($queryData);
-        } catch (\PDOException $e) {
-            return $this->resetConnect($e->getMessage(), function ($instance) {
-                return $instance->delete();
-            });
-        }
-    }
-
-    /**
      * 获取 sql
      * @return string
      */
@@ -326,7 +225,7 @@ class DbQuery extends Factory
      * @param  string $type 增删改查类型
      * @return array
      */
-    private function parseSql($type)
+    protected function parseSql($type)
     {
         if (!$this->table) {
             return errorMessage(500, 'tableName can\'t be eempty');
