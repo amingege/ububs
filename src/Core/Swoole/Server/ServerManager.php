@@ -45,11 +45,16 @@ class ServerManager
 
     public function getServer()
     {
-        return self::$serverInstance->getServer();
+        return $this->getServerInstance()->getServer();
     }
 
     public function getServerType()
     {
         return self::$serverType;
+    }
+
+    public function reload()
+    {
+
     }
 }

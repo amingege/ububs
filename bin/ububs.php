@@ -41,11 +41,11 @@ foreach (getToolFilePaths(UBUBS_ROOT . 'Tool') as $file) {
 }
 
 use Ububs\Component\Command\Adapter\Server;
+use Ububs\Core\Component\Db\Migrations\MigrationManager;
+use Ububs\Core\Component\Db\Seeds\SeedManager;
 use Ububs\Core\Http\Interaction\Route;
 use Ububs\Core\Swoole\Event\EventManager;
 use Ububs\Core\Swoole\Server\ServerManager;
-use Ububs\Core\Component\Db\Migrations\MigrationManager;
-use Ububs\Core\Component\Db\Seeds\SeedManager;
 use Ububs\Core\Tool\Config\Config;
 use Ububs\Core\Ububs;
 
@@ -70,7 +70,7 @@ class UbubsCommand
         'SERVER_START_SUCCESS'   => '服务器开启成功',
     ];
 
-    private $serverCommand = ['start' => 'serverStart', 'restart', 'stop'];
+    private $serverCommand = ['start' => 'serverStart', 'restart' => 'serverRestart', 'stop' => 'serverStop'];
     private $dbCommand     = ['seed' => 'dbSeed', 'migration' => 'dbMigration'];
 
     public function __construct()
@@ -170,12 +170,12 @@ class UbubsCommand
 
     private function serverStop($params)
     {
-        ServerManager::getInstance()->stop();
+        ServerManager::getInstance()->getServer()->stop();
     }
 
     private function serverReload($params)
     {
-        ServerManager::getInstance()->reload();
+        ServerManager::getInstance()->getServer()->start();
     }
 
     private function dbSeed($params)
