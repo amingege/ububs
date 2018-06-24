@@ -9,7 +9,8 @@ class Process
 
     use ProcessBuild;
 
-    private static $processList = [];
+    private static $processList     = [];
+    private static $processNameList = [];
 
     private static $instance;
 
@@ -31,17 +32,18 @@ class Process
         if ($processName && isset(self::$processList[$processName])) {
             return false;
         }
-        list($func, $rs, $pt) = $this->parseBuildParams($processName);
+        list($func, $rs, $pt) = $this->parseBuildParams();
         $process              = new SwooleProcess(function (SwooleProcess $swooleProcess) use ($func) {
             call_user_func($func, $swooleProcess);
         }, $rs, $pt);
         $process->useQueue();
-        $key = $process->start();
+        $pid = $process->start();
         if ($processName !== '') {
             $process->name($processName);
-            $key = md5($processName);
+            self::$processNameList[$processName] = $pid;
         }
-        self::$processList[$key] = $process;
+        self::$processList[$pid] = $process;
+        $this->afterProcess();
     }
 
     public function getProcess($processName = '')
@@ -49,9 +51,8 @@ class Process
         if ($processName === '') {
             return self::$processList;
         }
-        $key = md5($processName);
-        if (isset(self::$processList[$key])) {
-            return self::$processList[$key];
+        if (isset(self::$processNameList[$processName]) && isset(self::$processList[self::$processNameList[$processName]])) {
+            return self::$processList[self::$processNameList[$processName]];
         } else {
             return null;
         }
@@ -62,7 +63,7 @@ class Process
         $process = $this->getProcess($processName);
         $result  = '';
         if ($process) {
-            $result = $process->getPid();
+            $result = $process->pid;
         }
         return $result;
     }
@@ -86,6 +87,24 @@ class Process
     public function wait(bool $blocking = true)
     {
         return SwooleProcess::wait($blocking);
+    }
+
+    public function deleteProcess($pid)
+    {
+        if (!isset(self::$processList[$pid])) {
+            return false;
+        }
+        unset(self::$processList[$pid]);
+        $name = array_search($pid, self::$processNameList);
+        if ($name) {
+            unset(self::$processNameList[$name]);
+        }
+        return true;
+    }
+
+    public function afterProcess()
+    {
+
     }
 
 }

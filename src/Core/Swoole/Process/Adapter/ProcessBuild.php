@@ -6,7 +6,7 @@ trait ProcessBuild
 
     protected $processParams = [];
 
-    public function parseBuildParams($processName)
+    public function parseBuildParams()
     {
         if (!$params = $this->processParams) {
             throw new \Exception("Error Processing Request", 1);
@@ -24,18 +24,13 @@ trait ProcessBuild
 
     public function build(array $data)
     {
-        $name = isset($data['name']) ? $data['name'] : '';
         $func = isset($data['func']) ? $data['func'] : '';
         $rs   = isset($data['rs']) ? $data['rs'] : false;
         $pt   = isset($data['pt']) ? $data['pt'] : 2;
         if (!$func) {
             throw new \Exception("Error Processing Request", 1);
         }
-        if (!$name) {
-            $name = $func;
-        }
         $this->processParams = [
-            'name' => $name,
             'func' => $func,
             'rs'   => $rs,
             'pt'   => $pt,
