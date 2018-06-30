@@ -6,10 +6,20 @@ use Ububs\Core\Component\Db\Db;
 use Ububs\Core\Component\Factory;
 use Ububs\Core\Component\Middleware\Adapter\JWTAuth;
 
-class Auth extends Factory
+class Auth
 {
-    private static $table = null;
-    private static $time  = null;
+    private static $instance = null;
+    private $table = null;
+
+    public static function getInstance($table = 'user')
+    {
+        if (self::$instance === null) {
+            self::$instance = new Auth();
+        }
+        self::$instance->table = $table;
+        return self::$instance;
+    }
+
 
     /**
      * 指定登录表
@@ -18,7 +28,7 @@ class Auth extends Factory
      */
     public static function guard($table = 'user')
     {
-        self::$table = $table;
+        $this->table = $table;
         return self::getInstance();
     }
 
@@ -32,29 +42,26 @@ class Auth extends Factory
     {
         $result = [];
         if (count($loginData) !== 2) {
-            self::$table = null;
-            self::$time  = null;
+            $this->table = null;
             return $result;
         }
-        $configs  = isset(config('auth.guards')[self::$table]) ? config('auth.guards')[self::$table] : [];
+        $configs  = isset(config('auth.guards')[$this->table]) ? config('auth.guards')[$this->table] : [];
         $account  = $configs['account'] ?? 'account';
         $password = $configs['password'] ?? 'password';
         if (!isset($loginData[$account]) || !isset($loginData[$password])) {
-            self::$table = null;
-            self::$time  = null;
+            $this->table = null;
             return $result;
         }
         $wheres = [
             $account  => $loginData[$account],
             $password => generatePassword($loginData[$password]),
         ];
-        $list       = Db::table(self::$table)->where($wheres)->first();
+        $list       = Db::table($this->table)->where($wheres)->first();
         if (empty($list)) {
-            self::$table = null;
-            self::$time  = null;
+            $this->table = null;
             return $result;
         }
-        $tableData  = Db::query('describe ' . self::$table);
+        $tableData  = Db::query('describe ' . $this->table);
         $primaryKey = 'id';
         foreach ($tableData as $fieldData) {
             if ($fieldData['Key'] == 'PRI') {
@@ -63,10 +70,9 @@ class Auth extends Factory
             }
         }
         // 生成一个token
-        $result['__UBUBS_TOKEN__'] = JWTAuth::getInstance()->createToken($list[$primaryKey], self::$table);
+        $result['__UBUBS_TOKEN__'] = JWTAuth::getInstance()->createToken($list[$primaryKey], $this->table);
         $result['list']            = $list;
-        self::$table               = null;
-        self::$time                = null;
+        $this->table               = null;
         return $result;
     }
 
@@ -75,9 +81,15 @@ class Auth extends Factory
      * @param  string $token jwt
      * @return boolean
      */
-    public function check()
+    public function checkLogin()
     {
-        return JWTAuth::getInstance()->attempt(Request::getAuthorization());
+        if ($this->table !== JWTAuth::getInstance()->getTable()) {
+            return false;
+        }
+        if (!$this->id()) {
+            return false;
+        }
+        return true;
     }
 
     public function logout()

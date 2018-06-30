@@ -1,9 +1,8 @@
 <?php
 namespace Ububs\Core\Component\Middleware\Adapter;
 
-use FwSwoole\Core\Request;
-use FwSwoole\Middleware\Kernel;
-use FwSwoole\Log\Log;
+use Ububs\Core\Component\Middleware\Kernel;
+use Ububs\Core\Http\Interaction\Request;
 
 class VerifyCsrfToken extends Kernel
 {
@@ -21,12 +20,13 @@ class VerifyCsrfToken extends Kernel
     }
 
     // 校验 token
-    public function check($token)
+    public function checkCsrf()
     {
         // 手动配置无需验证的 token
-        if (!empty($this->except) && is_array($this->except)) {
+        $except = $this->getExcept();
+        if (!empty($except)) {
             $pathInfo = Request::getPathInfo();
-            if (\in_array($pathInfo, $this->except)) {
+            if (\in_array($pathInfo, $except)) {
                 return true;
             }
             // 正则匹配
@@ -36,11 +36,14 @@ class VerifyCsrfToken extends Kernel
             //     }
             // }
         }
-        $primaryKeyValue = JWTAuth::getInstance()->attempt($token);
-        if (!$primaryKeyValue) {
-            Log::info('token error');
-            return false;
+        return JWTAuth::getInstance()->attempt(Request::getAuthorization());
+    }
+
+    private function getExcept()
+    {
+        if (class_exists('App\Http\Middleware\VerifyCsrfToken')) {
+            return app('App\Http\Middleware\VerifyCsrfToken')->except;
         }
-        return true;
+        return [];
     }
 }

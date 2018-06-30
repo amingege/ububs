@@ -40,7 +40,7 @@ class JWTAuth extends Kernel
      * 创建 token
      * @return string
      */
-    public function createToken($id, $table)
+    public function createToken($id = 0, $table = '')
     {
         $header = [
             "typ" => "JWT",
@@ -58,7 +58,7 @@ class JWTAuth extends Kernel
             // "nbf"   => 1357000000, # 非必须。not before。如果当前时间在nbf里的时间之前，则Token不被接受；一般都会留一些余地，比如几分钟。
             // "jti"   => '222we', # 非必须。JWT ID。针对当前token的唯一标识
             "id"  => $id, # 自定义字段
-            "table"  => $id, # 自定义字段
+            "table"  => $table, # 自定义字段
         ];
         $jwtPayload   = base64_encode(json_encode($payload));
         $jwtSignature = $this->createSignature($header['alg'], $jwtHeader . $jwtPayload, config('app.encrypt_key'));
@@ -142,8 +142,7 @@ class JWTAuth extends Kernel
      */
     public function getJWTAuthToken()
     {
-        return '';
-        // return $this->createToken();
+        return $this->createToken();
     }
 
     /**
@@ -156,5 +155,10 @@ class JWTAuth extends Kernel
     private function createSignature($alg, $string, $encryptKey)
     {
         return hash_hmac($alg, $string, $encryptKey);
+    }
+
+    public function getTable()
+    {
+        return $this->table;
     }
 }

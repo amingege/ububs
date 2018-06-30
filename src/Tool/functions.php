@@ -80,12 +80,8 @@ function errorMessage($message)
  */
 function csrf_token()
 {
-    $csrfToken = sha1('test');
-    // $csrfToken = \FwSwoole\Middleware\Adapter\VerifyCsrfToken::getInstance()->getCsrfToken();
-    // if (!$csrfToken) {
-    //     return '';
-    // }
-    return "<meta name='Authrization' content='" . $csrfToken . "'>";
+    $csrfToken = \Ububs\Core\Component\Middleware\Adapter\VerifyCsrfToken::getInstance()->getCsrfToken();
+    return "<meta name='Authrization' content='" . $csrfToken . "' />\r\n";
 }
 
 function generatePassword($password)

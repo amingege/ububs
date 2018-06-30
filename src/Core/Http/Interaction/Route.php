@@ -5,6 +5,7 @@ use Ububs\Core\Component\Middleware\Middleware;
 use Ububs\Core\Http\Factory;
 use UBubs\Core\Http\Interaction\Response;
 use Ububs\Core\Tool\StatusCode\StatusCode;
+use Ububs\Core\Component\Middleware\Adapter\VerifyCsrfToken;
 
 class Route extends Factory
 {
@@ -30,8 +31,14 @@ class Route extends Factory
     {
         $routers = isset($routeInfo[1]) ? $routeInfo[1] : [];
         if (empty($routers)) {
-            throw new \Exception('routers is error, please check it');
+            return Response::error(StatusCode::CODE_UNAUTHORIZED);
         }
+
+        // csrf 验证
+        if (!$csrfResult = VerifyCsrfToken::getInstance()->checkCsrf()) {
+            return Response::error(StatusCode::CODE_UNAUTHORIZED);
+        }
+
         // 中间件验证
         $middleware = isset($routers['middleware']) ? $routers['middleware'] : [];
         if (!$mr = Middleware::validate($middleware)) {
