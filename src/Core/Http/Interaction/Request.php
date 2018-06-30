@@ -31,9 +31,26 @@ class Request
      * 获取请求头信息
      * @return array
      */
-    public static function getHeader()
+    public static function getHeader($key = '')
     {
-        return self::$request->header;
+        $result = self::getRequest()->header;
+        if ($key !== '') {
+            $result = isset($result[$key]) ? $result[$key] : '';
+        }
+        return $result;
+    }
+
+    /**
+     * 获取请求头信息
+     * @return array
+     */
+    public static function getServer($key = '')
+    {
+        $result = self::getRequest()->server;
+        if ($key !== '') {
+            $result = isset($result[$key]) ? $result[$key] : '';
+        }
+        return $result;
     }
 
     /**
@@ -42,7 +59,7 @@ class Request
      */
     public static function getMethod()
     {
-        return strtoupper(self::$request->server['request_method']);
+        return self::getServer('request_method');
     }
 
     /**
@@ -51,7 +68,7 @@ class Request
      */
     public static function getPathInfo()
     {
-        return self::$request->server['path_info'];
+        return self::getServer('path_info');
     }
 
     /**
@@ -60,7 +77,12 @@ class Request
      */
     public static function getAuthorization()
     {
-        return self::$request->header['x-authrization'] ?? '';
+        return self::getHeader('x-authrization');
+    }
+
+    public static function getReferer()
+    {
+        return self::getHeader('referer');
     }
 
     /**
@@ -69,12 +91,12 @@ class Request
      */
     public static function getFd()
     {
-        return self::$request->fd;
+        return self::getRequest()->fd;
     }
 
     public static function getRealIp()
     {
-        return self::getHeader()['x-real-ip'];
+        return self::getHeader('x-real-ip');
     }
 
     /**
@@ -84,7 +106,7 @@ class Request
      */
     public static function get($key = '')
     {
-        $getParams = self::$request->get;
+        $getParams = self::getRequest()->get;
         if ($key === '') {
             return $getParams;
         }
@@ -100,10 +122,10 @@ class Request
     public static function post($key = '')
     {
         // Content-Type:application/x-www-form-urlencoded
-        $result = self::$request->post ?? [];
+        $result = self::getRequest()->post ?? [];
 
         // Content-Type:text/plain;charset=UTF-8
-        $postRawContent = self::$request->rawContent();
+        $postRawContent = self::getRequest()->rawContent();
         if ($postRawContent) {
             $result = array_merge($result, json_decode($postRawContent, true));
         }
@@ -115,7 +137,7 @@ class Request
 
     public static function file($key = '')
     {
-        $result = self::$request->files;
+        $result = self::getRequest()->files;
         if ($key === '') {
             return $result;
         }

@@ -121,6 +121,10 @@ function webpackLoad($filePath)
     return '/public/' . dirname(str_replace('\\', '/', $filePath)) . '/' . $result;
 }
 
+/**
+ * 获取用户真实ip
+ * @return string 
+ */
 function getRealIp()
 {
     return Request::getRealIp();

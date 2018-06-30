@@ -1,14 +1,14 @@
 <?php
 namespace Ububs\Core\Component\Middleware\Adapter;
 
+use Ububs\Core\Component\Db\Db;
 use Ububs\Core\Component\Middleware\Kernel;
 use Ububs\Core\Http\Interaction\Request;
-use Ububs\Core\Component\Db\Db;
 
 class JWTAuth extends Kernel
 {
 
-    private $id = null;
+    private $id    = null;
     private $table = null;
 
     /**
@@ -51,15 +51,19 @@ class JWTAuth extends Kernel
         $expireTime = intval($createTime + config('app.token_expire_time', '10800'));
         $payload    = [
             // "iss"   => "http://example.org", #非必须。issuer 请求实体，可以是发起请求的用户的信息，也可是jwt的签发者。
-            "iat" => $createTime, #非必须。issued at。 token创建时间，unix时间戳格式
-            "exp" => $expireTime, #非必须。expire 指定token的生命周期。unix时间戳格式
-            // "aud"   => "http://example.com", #非必须。接收该JWT的一方。
+            "iat"   => $createTime, #非必须。issued at。 token创建时间，unix时间戳格式
+            "exp"   => $expireTime, #非必须。expire 指定token的生命周期。unix时间戳格式
+            // "aud"   => Request::getReferer(), #非必须。接收该JWT的一方。
             // "sub"   => "ububs@example.com", #非必须。该JWT所面向的用户
             // "nbf"   => 1357000000, # 非必须。not before。如果当前时间在nbf里的时间之前，则Token不被接受；一般都会留一些余地，比如几分钟。
             // "jti"   => '222we', # 非必须。JWT ID。针对当前token的唯一标识
-            "id"  => $id, # 自定义字段
-            "table"  => $table, # 自定义字段
+            "id"    => $id, # 自定义字段
+            "table" => $table, # 自定义字段
         ];
+        if (Request::getReferer()) {
+            preg_match("/^https?:\/\/[^\/?]+/", Request::getReferer(), $matches);
+            $payload['aud'] = isset($matches[0]) ? $matches[0] : '';
+        }
         $jwtPayload   = base64_encode(json_encode($payload));
         $jwtSignature = $this->createSignature($header['alg'], $jwtHeader . $jwtPayload, config('app.encrypt_key'));
         return self::TOKEN_MARK . $jwtHeader . '.' . $jwtPayload . '.' . $jwtSignature;
@@ -96,13 +100,22 @@ class JWTAuth extends Kernel
         $payload = json_decode(base64_decode($jwtPayload), true);
         // 校验过期时间
         $time = time();
-        if (isset($payload['iat']) && $payload['iat'] > $time) {
+        if (!isset($payload['iat']) || $payload['iat'] > $time) {
             return false;
         }
-        if (isset($payload['exp']) && $payload['exp'] < $time) {
+        if (!isset($payload['exp']) || $payload['exp'] < $time) {
             return false;
         }
-        $this->id = $payload['id'];
+        // XSS 攻击检测referer
+        if (Request::getReferer() &&
+            isset($payload['aud']) &&
+            !empty($payload['aud']) &&
+            strpos(Request::getReferer(), $payload['aud']) === -1
+        ) {
+            return false;
+        }
+        
+        $this->id    = $payload['id'];
         $this->table = $payload['table'];
         return true;
     }
