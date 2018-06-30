@@ -20,7 +20,6 @@ php7 + swoole常驻内存框架
 - **[完成]** 通过swoole，封装数据库连接池，通过配置实现，提高易用性
 - **[完成]** websocket 和 http_server 服务支持，支持配置切换
 - **[完成]** 命令行：一键部署框架，数据库迁移，数据填充，服务端启动、停止、重启，创建controller，model类等
-- **[完成]** 前端整合vue，webpack编译
 - RPC 服务支持
 - 集群部署
 - 广播系统
@@ -29,8 +28,8 @@ php7 + swoole常驻内存框架
 ## 用法实例 ##
 <pre>
 // 框架初始化
-php bin/ububs install
+php bin/ububs.php install
 
 // 启动服务
-php bin/ububs server:start
+php bin/ububs.php server:start
 </pre>
