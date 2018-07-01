@@ -336,4 +336,36 @@ class Pdo extends DbQuery implements IDbConnection, IDbExcute
     {
 
     }
+
+    public function min(string $field)
+    {
+        $this->minField = $field;
+        list($sql, $queryData) = $this->parseSql(self::SELECT_MIN);
+        $stmt                  = $this->getDb()->prepare($sql);
+        try {
+            $stmt->execute($queryData);
+        } catch (\PDOException $e) {
+            return $this->resetConnect($e->getMessage(), function ($instance) {
+                return $instance->first();
+            });
+        }
+        $stmt->setFetchMode(\PDO::FETCH_ASSOC);
+        return $stmt->fetch()[$this->minField];
+    }
+
+    public function max(string $field)
+    {
+        $this->maxField = $field;
+        list($sql, $queryData) = $this->parseSql(self::SELECT_MAX);
+        $stmt                  = $this->getDb()->prepare($sql);
+        try {
+            $stmt->execute($queryData);
+        } catch (\PDOException $e) {
+            return $this->resetConnect($e->getMessage(), function ($instance) {
+                return $instance->first();
+            });
+        }
+        $stmt->setFetchMode(\PDO::FETCH_ASSOC);
+        return $stmt->fetch()[$this->maxField];
+    }
 }

@@ -1,19 +1,19 @@
 <?php
 namespace Ububs\Core\Http\Interaction;
 
+use Ububs\Core\Component\Middleware\Adapter\VerifyCsrfToken;
 use Ububs\Core\Component\Middleware\Middleware;
 use Ububs\Core\Http\Factory;
 use UBubs\Core\Http\Interaction\Response;
 use Ububs\Core\Tool\StatusCode\StatusCode;
-use Ububs\Core\Component\Middleware\Adapter\VerifyCsrfToken;
 
 class Route extends Factory
 {
     private static $dispatcher;
     private static $routes;
-    public static $actionNamespace;
-    public static $actionController;
-    public static $actionMethod;
+    public $actionNamespace;
+    public $actionController;
+    public $actionMethod;
 
     public function init()
     {
@@ -44,20 +44,20 @@ class Route extends Factory
         if (!$mr = Middleware::validate($middleware)) {
             return Response::error(StatusCode::CODE_UNAUTHORIZED);
         }
-        $actions         = isset($routers['action']) ? $routers['action'] : '';
-        self::$actionNamespace = isset($routers['namespace']) ? $routers['namespace'] : '';
+        $actions               = isset($routers['action']) ? $routers['action'] : '';
+        $this->actionNamespace = isset($routers['namespace']) ? $routers['namespace'] : '';
         if ($actions === '') {
             return Response::error(StatusCode::CODE_UNAUTHORIZED);
         }
         if (is_callable($actions)) {
             return call_user_func($actions);
         }
-        list(self::$actionController, self::$actionMethod) = explode('@', $actions);
+        list($this->actionController, $this->actionMethod) = explode('@', $actions);
         // 依赖注入等解析
         $diContainer    = Container::getInstance();
-        $diContainer->c = self::$actionNamespace . '\\' . self::$actionController;
+        $diContainer->c = $this->actionNamespace . '\\' . $this->actionController;
         $controller     = $diContainer->c;
-        $method         = self::$actionMethod;
+        $method         = $this->actionMethod;
         $params         = isset($routeInfo[2]) ? array_values($routeInfo[2]) : [];
         try {
             return $controller->$method(...$params);

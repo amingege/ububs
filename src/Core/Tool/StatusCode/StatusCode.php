@@ -4,6 +4,7 @@ namespace Ububs\Core\Tool\StatusCode;
 class StatusCode
 {
     const CODE_UNAUTHORIZED = 401;
+    const CODE_TEMP_REDIRECT = 302;
 
     private static $codeMessage = [
         100 => 'Continue',

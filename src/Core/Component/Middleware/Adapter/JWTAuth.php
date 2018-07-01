@@ -48,7 +48,7 @@ class JWTAuth extends Kernel
         ];
         $jwtHeader  = base64_encode(json_encode($header));
         $createTime = time();
-        $expireTime = intval($createTime + config('app.token_expire_time', '10800'));
+        $expireTime = intval($createTime + config('app.token_expire_time', 10800));
         $payload    = [
             // "iss"   => "http://example.org", #非必须。issuer 请求实体，可以是发起请求的用户的信息，也可是jwt的签发者。
             "iat"   => $createTime, #非必须。issued at。 token创建时间，unix时间戳格式

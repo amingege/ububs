@@ -11,11 +11,15 @@ class DbQuery extends Factory
     const UPDATE_COMMAND = 'UPDATE';
     const DELETE_COMMAND = 'DELETE';
     const INSERT_COMMAND = 'INSERT';
+    const SELECT_MAX     = 'MAX';
+    const SELECT_MIN     = 'MIN';
 
     protected static $db = null;
 
     protected $table   = null;
     protected $selects = '*';
+    protected $minField = '';
+    protected $maxField = '';
     protected $updates = [];
     protected $wheres  = [];
     protected $limit   = [];
@@ -186,6 +190,12 @@ class DbQuery extends Factory
         return self::getInstance();
     }
 
+    public function pagination(array $pages)
+    {
+        $this->limit = $pages;
+        return self::getInstance();
+    }
+
     /**
      * 获取 sql
      * @return string
@@ -239,6 +249,14 @@ class DbQuery extends Factory
 
             case self::SELECT_COMMAND:
                 $sql = "SELECT {$this->selects} FROM {$this->table}";
+                break;
+
+            case self::SELECT_MAX:
+                $sql = "SELECT max({$this->maxField}) as {$this->maxField} FROM {$this->table}";
+                break;
+
+            case self::SELECT_MIN:
+                $sql = "SELECT min({$this->minField}) as {$this->minField} FROM {$this->table}";
                 break;
 
             case self::UPDATE_COMMAND:
